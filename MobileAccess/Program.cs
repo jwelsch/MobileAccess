@@ -37,6 +37,9 @@ namespace MobileAccess
                   }
                }
             }
+
+            // Get an HIDP_CAPS struct
+            // http://stackoverflow.com/questions/11691619/cannot-communicate-successfully-with-usb-hid-device-using-writefile
          }
          catch ( CommandLineDeclarationException ex )
          {

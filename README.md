@@ -1,0 +1,1 @@
+Provides access to USB-connected mobile devices.
