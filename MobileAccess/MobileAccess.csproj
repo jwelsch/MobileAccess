@@ -53,6 +53,7 @@
     <Compile Include="Kernel32.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SetupApi.cs" />
     <Compile Include="UsbDeviceInfo.cs" />
     <Compile Include="UsbManager.cs" />
     <Compile Include="VolumeInformer.cs" />

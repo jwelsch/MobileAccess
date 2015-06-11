@@ -7,6 +7,7 @@ namespace MobileAccess
    public class Kernel32
    {
       #region FileSystemFeature
+
       [Flags]
       public enum FileSystemFeature : uint
       {
@@ -71,6 +72,7 @@ namespace MobileAccess
          /// </summary>
          SupportsTransactions = 0x200000,
       }
+
       #endregion
 
       [DllImport( "kernel32.dll" )]
