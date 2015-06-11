@@ -13,6 +13,7 @@ namespace MobileAccess
       public const int DIGCF_PROFILE = 0x8;
       public const int DIGCF_DEVICEINTERFACE = 0x10;
       public static readonly Guid GUID_DEVINTERFACE_DISK = new Guid( 0x53f56307, 0xb6bf, 0x11d0, 0x94, 0xf2, 0x00, 0xa0, 0xc9, 0x1e, 0xfb, 0x8b );
+      public static readonly Guid GUID_DEVINTERFACE_USB_DEVICE = new Guid( 0xA5DCBF10, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED );
       public const uint SP_DEVICE_INTERFACE_DETAIL_DATA_BUFFER_SIZE = 256;
 
       [Flags]
@@ -50,6 +51,13 @@ namespace MobileAccess
          public uint devInst;
          public IntPtr reserved;
       }
+
+      //[StructLayout( LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 1 )]
+      //public struct SP_DEVICE_INTERFACE_DETAIL_DATA
+      //{
+      //   public int cbSize;
+      //   public char devicePath;
+      //}
 
       [StructLayout( LayoutKind.Sequential, CharSet = CharSet.Auto )]
       public struct SP_DEVICE_INTERFACE_DETAIL_DATA
@@ -125,6 +133,17 @@ namespace MobileAccess
          UInt32 deviceInterfaceDetailDataSize,
          out UInt32 requiredSize,
          ref SP_DEVINFO_DATA deviceInfoData
+      );
+
+      // Allows passing IntPtr.Zero (for C++ NULL) for deviceInterfaceDetailData, and deviceInfoData.
+      [DllImport( "setupapi.dll", CharSet = CharSet.Auto, SetLastError = true )]
+      public static extern Boolean SetupDiGetDeviceInterfaceDetail(
+         IntPtr hDevInfo,
+         ref SP_DEVICE_INTERFACE_DATA deviceInterfaceData,
+         IntPtr deviceInterfaceDetailData,
+         UInt32 deviceInterfaceDetailDataSize,
+         out UInt32 requiredSize,
+         IntPtr deviceInfoData
       );
 
       [DllImport( "setupapi.dll" )]

@@ -26,10 +26,11 @@ namespace MobileAccess
                   var handle = IntPtr.Zero;
                   try
                   {
-                     var diskGuid = SetupApi.GUID_DEVINTERFACE_DISK;
+                     var diGuid = SetupApi.GUID_DEVINTERFACE_USB_DEVICE;
+                     //var diGuid = SetupApi.GUID_DEVINTERFACE_DISK;
 
                      // Start at the "root" of the device tree and look for all devices that match the interface GUID of a disk.
-                     handle = SetupApi.SetupDiGetClassDevs( ref diskGuid, IntPtr.Zero, IntPtr.Zero, SetupApi.DiGetClassFlags.DIGCF_PRESENT | SetupApi.DiGetClassFlags.DIGCF_DEVICEINTERFACE );
+                     handle = SetupApi.SetupDiGetClassDevs( ref diGuid, IntPtr.Zero, IntPtr.Zero, SetupApi.DiGetClassFlags.DIGCF_PRESENT | SetupApi.DiGetClassFlags.DIGCF_DEVICEINTERFACE );
                      if ( handle != Win32Defines.INVALID_HANDLE_VALUE )
                      {
                         var success = true;
@@ -38,22 +39,46 @@ namespace MobileAccess
                         while ( success )
                         {
                            var dia = new SetupApi.SP_DEVICE_INTERFACE_DATA();
+                           // 64-bit Win8.1 = 32 bytes
+                           // 32-bit, Any CPU Win8.1 = 28 bytes
                            dia.cbSize = Marshal.SizeOf( dia );
 
                            // Start the enumeration.
-                           success = SetupApi.SetupDiEnumDeviceInterfaces( handle, IntPtr.Zero, ref diskGuid, (uint) i, ref dia );
-                           if ( success )
+                           success = SetupApi.SetupDiEnumDeviceInterfaces( handle, IntPtr.Zero, ref diGuid, (uint) i, ref dia );
+                           if ( !success )
+                           {
+                              var code = Marshal.GetLastWin32Error();
+                              System.Diagnostics.Trace.WriteLine( "SetupDiEnumDeviceInterfaces returned: " + code.ToString() );
+                           }
+                           else
                            {
                               var da = new SetupApi.SP_DEVINFO_DATA();
+                              // 64-bit Win8.1 = 32 bytes
+                              // 32-bit, Any CPU Win8.1 = 28 bytes
                               da.cbSize = Marshal.SizeOf( da );
 
                               var didd = new SetupApi.SP_DEVICE_INTERFACE_DETAIL_DATA();
-                              didd.cbSize = Marshal.SizeOf( didd );
+                              if ( IntPtr.Size == 8 )
+                              {
+                                 didd.cbSize = 8;
+                              }
+                              else
+                              {
+                                 didd.cbSize = 4 + Marshal.SystemDefaultCharSize;
+                              }
 
                               // Get detailed information on the device.
                               var requiredSize = 0U;
+                              var ok = false;
+
                               var bytes = SetupApi.SP_DEVICE_INTERFACE_DETAIL_DATA_BUFFER_SIZE;
-                              if ( SetupApi.SetupDiGetDeviceInterfaceDetail( handle, ref dia, ref didd, bytes, out requiredSize, ref da ) )
+                              ok = SetupApi.SetupDiGetDeviceInterfaceDetail( handle, ref dia, ref didd, bytes, out requiredSize, ref da );
+                              if ( !ok )
+                              {
+                                 var code = Marshal.GetLastWin32Error();
+                                 System.Diagnostics.Trace.WriteLine( "SetupDiGetDeviceInterfaceDetail returned: " + code.ToString() );
+                              }
+                              else
                               {
                                  // Current InstanceID is at the "USBSTOR" level, so "move up" one level to get to the "USB" level.
                                  var previous = 0U;
@@ -66,8 +91,8 @@ namespace MobileAccess
                                     {
                                        var instanceID = Marshal.PtrToStringAuto( instanceBuffer );
                                        Console.WriteLine( instanceID );
-                                       Marshal.FreeHGlobal( instanceBuffer );
                                     }
+                                    Marshal.FreeHGlobal( instanceBuffer );
                                  }
                               }
                            }
