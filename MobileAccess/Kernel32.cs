@@ -110,5 +110,16 @@ namespace MobileAccess
         out FileSystemFeature FileSystemFlags,
         StringBuilder FileSystemNameBuffer,
         int nFileSystemNameSize );
+
+      [DllImport( "kernel32.dll", CharSet = CharSet.Auto, SetLastError = true )]
+      public static extern bool DeviceIoControl(
+              IntPtr hDevice,
+              uint dwIoControlCode,
+              IntPtr lpInBuffer,
+              uint nInBufferSize,
+              IntPtr lpOutBuffer,
+              uint nOutBufferSize,
+              out uint pBytesReturned,
+              IntPtr lpOverlapped );
    }
 }
