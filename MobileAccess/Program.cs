@@ -5,6 +5,9 @@ using CommandLineLib;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Management;
 
 namespace MobileAccess
 {
@@ -19,101 +22,40 @@ namespace MobileAccess
             commandLine = new CommandLine<CLArguments>();
             var arguments = commandLine.Parse( args );
 
-            using ( var fileStream = new FileStream( "C:\\Temp\\usb.txt", FileMode.Create, FileAccess.Write, FileShare.Write ) )
+            using ( var cancellation = new CancellationTokenSource() )
             {
-               using ( var writer = new StreamWriter( fileStream, Encoding.UTF8, 1024000, true ) )
+               var task = Task.Factory.StartNew( () =>
+                  {
+                     var insertQuery = new WqlEventQuery( "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
+
+                     var insertWatcher = new ManagementEventWatcher( insertQuery );
+                     insertWatcher.EventArrived += new EventArrivedEventHandler( DeviceInsertedEvent );
+                     insertWatcher.Start();
+
+                     var removeQuery = new WqlEventQuery( "SELECT * FROM __InstanceDeletionEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
+                     var removeWatcher = new ManagementEventWatcher( removeQuery );
+                     removeWatcher.EventArrived += new EventArrivedEventHandler( DeviceRemovedEvent );
+                     removeWatcher.Start();
+                  }
+                  , cancellation.Token );
+
+               var keyInfo = new ConsoleKeyInfo();
+
+               Console.WriteLine( "Press Q to quit." );
+               Console.WriteLine( "Listening for events..." );
+
+               do
                {
-                  var handle = IntPtr.Zero;
-                  try
-                  {
-                     var diGuid = SetupApi.GUID_DEVINTERFACE_USB_DEVICE;
-                     //var diGuid = SetupApi.GUID_DEVINTERFACE_DISK;
-
-                     // Start at the "root" of the device tree and look for all devices that match the interface GUID of a disk.
-                     handle = SetupApi.SetupDiGetClassDevs( ref diGuid, IntPtr.Zero, IntPtr.Zero, SetupApi.DiGetClassFlags.DIGCF_PRESENT | SetupApi.DiGetClassFlags.DIGCF_DEVICEINTERFACE );
-                     if ( handle != Win32Defines.INVALID_HANDLE_VALUE )
-                     {
-                        var success = true;
-                        var i = 0;
-
-                        while ( success )
-                        {
-                           var dia = new SetupApi.SP_DEVICE_INTERFACE_DATA();
-                           // 64-bit Win8.1 = 32 bytes
-                           // 32-bit, Any CPU Win8.1 = 28 bytes
-                           dia.cbSize = Marshal.SizeOf( dia );
-
-                           // Start the enumeration.
-                           success = SetupApi.SetupDiEnumDeviceInterfaces( handle, IntPtr.Zero, ref diGuid, (uint) i, ref dia );
-                           if ( !success )
-                           {
-                              var code = Marshal.GetLastWin32Error();
-                              System.Diagnostics.Trace.WriteLine( "SetupDiEnumDeviceInterfaces returned: " + code.ToString() );
-                           }
-                           else
-                           {
-                              var da = new SetupApi.SP_DEVINFO_DATA();
-                              // 64-bit Win8.1 = 32 bytes
-                              // 32-bit, Any CPU Win8.1 = 28 bytes
-                              da.cbSize = Marshal.SizeOf( da );
-
-                              var didd = new SetupApi.SP_DEVICE_INTERFACE_DETAIL_DATA();
-                              if ( IntPtr.Size == 8 )
-                              {
-                                 didd.cbSize = 8;
-                              }
-                              else
-                              {
-                                 didd.cbSize = 4 + Marshal.SystemDefaultCharSize;
-                              }
-
-                              // Get detailed information on the device.
-                              var requiredSize = 0U;
-                              var ok = false;
-
-                              var bytes = SetupApi.SP_DEVICE_INTERFACE_DETAIL_DATA_BUFFER_SIZE;
-                              ok = SetupApi.SetupDiGetDeviceInterfaceDetail( handle, ref dia, ref didd, bytes, out requiredSize, ref da );
-                              if ( !ok )
-                              {
-                                 var code = Marshal.GetLastWin32Error();
-                                 System.Diagnostics.Trace.WriteLine( "SetupDiGetDeviceInterfaceDetail returned: " + code.ToString() );
-                              }
-                              else
-                              {
-                                 // Current InstanceID is at the "USBSTOR" level, so "move up" one level to get to the "USB" level.
-                                 var previous = 0U;
-                                 var result = SetupApi.CM_Get_Parent( out previous, (uint) da.devInst, 0 );
-                                 if ( result == Win32Defines.ERROR_SUCCESS )
-                                 {
-                                    var instanceBuffer = Marshal.AllocHGlobal( (int) bytes );
-                                    result = SetupApi.CM_Get_Device_ID( previous, instanceBuffer, (int) bytes, 0 );
-                                    if ( result == Win32Defines.ERROR_SUCCESS )
-                                    {
-                                       var instanceID = Marshal.PtrToStringAuto( instanceBuffer );
-                                       Console.WriteLine( instanceID );
-                                    }
-                                    Marshal.FreeHGlobal( instanceBuffer );
-                                 }
-                              }
-                           }
-                           i++;
-                        }
-                     }
-                  }
-                  finally
-                  {
-                     if ( handle != Win32Defines.INVALID_HANDLE_VALUE )
-                     {
-                        SetupApi.SetupDiDestroyDeviceInfoList( handle );
-                     }
-                  }
+                  keyInfo = Console.ReadKey();
                }
+               while ( keyInfo.Key != ConsoleKey.Q );
+
+               Console.WriteLine();
+               Console.WriteLine( "Exiting..." );
+
+               cancellation.Cancel();
+               task.Wait();
             }
-
-            // Get an HIDP_CAPS struct
-            // http://stackoverflow.com/questions/11691619/cannot-communicate-successfully-with-usb-hid-device-using-writefile
-
-            // http://www.developerfusion.com/article/84338/making-usb-c-friendly/
          }
          catch ( CommandLineDeclarationException ex )
          {
@@ -137,6 +79,24 @@ namespace MobileAccess
          {
             System.Diagnostics.Trace.WriteLine( ex );
             Console.WriteLine( ex );
+         }
+      }
+
+      private static void DeviceInsertedEvent( object sender, EventArrivedEventArgs e )
+      {
+         var instance = (ManagementBaseObject) e.NewEvent["TargetInstance"];
+         foreach ( var property in instance.Properties )
+         {
+            Console.WriteLine( property.Name + " = " + property.Value );
+         }
+      }
+
+      private static void DeviceRemovedEvent( object sender, EventArrivedEventArgs e )
+      {
+         var instance = (ManagementBaseObject) e.NewEvent["TargetInstance"];
+         foreach ( var property in instance.Properties )
+         {
+            Console.WriteLine( property.Name + " = " + property.Value );
          }
       }
    }
