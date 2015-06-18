@@ -38,6 +38,32 @@ namespace MobileAccess
             Console.WriteLine( "Press Q to quit." );
             Console.WriteLine( "Listening for events..." );
 
+            ManagementObjectCollection collection = null;
+            var table = "Win32_USBControllerDevice";
+            //var table = "Win32_USBHub";
+            //var table = "Win32_USBController";
+            //var table = "Win32_PnPEntity";
+            var queryString = "SELECT * FROM " + table;
+            using ( var searcher = new ManagementObjectSearcher( queryString ) )
+            {
+               collection = searcher.Get();
+            }
+
+            using ( var file = new StreamWriter( table + ".txt" ) )
+            {
+               foreach ( var device in collection )
+               {
+                  foreach ( var property in device.Properties )
+                  {
+                     file.WriteLine( property.Name + " = " + property.Value );
+                     Console.WriteLine( property.Name + " = " + property.Value );
+                  }
+
+                  file.WriteLine();
+                  Console.WriteLine();
+               }
+            }
+
             do
             {
                keyInfo = Console.ReadKey();
