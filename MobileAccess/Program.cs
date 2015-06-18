@@ -22,40 +22,30 @@ namespace MobileAccess
             commandLine = new CommandLine<CLArguments>();
             var arguments = commandLine.Parse( args );
 
-            using ( var cancellation = new CancellationTokenSource() )
+            var insertQuery = new WqlEventQuery( "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
+
+            var insertWatcher = new ManagementEventWatcher( insertQuery );
+            insertWatcher.EventArrived += new EventArrivedEventHandler( DeviceInsertedEvent );
+            insertWatcher.Start();
+
+            var removeQuery = new WqlEventQuery( "SELECT * FROM __InstanceDeletionEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
+            var removeWatcher = new ManagementEventWatcher( removeQuery );
+            removeWatcher.EventArrived += new EventArrivedEventHandler( DeviceRemovedEvent );
+            removeWatcher.Start();
+
+            var keyInfo = new ConsoleKeyInfo();
+
+            Console.WriteLine( "Press Q to quit." );
+            Console.WriteLine( "Listening for events..." );
+
+            do
             {
-               var task = Task.Factory.StartNew( () =>
-                  {
-                     var insertQuery = new WqlEventQuery( "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
-
-                     var insertWatcher = new ManagementEventWatcher( insertQuery );
-                     insertWatcher.EventArrived += new EventArrivedEventHandler( DeviceInsertedEvent );
-                     insertWatcher.Start();
-
-                     var removeQuery = new WqlEventQuery( "SELECT * FROM __InstanceDeletionEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
-                     var removeWatcher = new ManagementEventWatcher( removeQuery );
-                     removeWatcher.EventArrived += new EventArrivedEventHandler( DeviceRemovedEvent );
-                     removeWatcher.Start();
-                  }
-                  , cancellation.Token );
-
-               var keyInfo = new ConsoleKeyInfo();
-
-               Console.WriteLine( "Press Q to quit." );
-               Console.WriteLine( "Listening for events..." );
-
-               do
-               {
-                  keyInfo = Console.ReadKey();
-               }
-               while ( keyInfo.Key != ConsoleKey.Q );
-
-               Console.WriteLine();
-               Console.WriteLine( "Exiting..." );
-
-               cancellation.Cancel();
-               task.Wait();
+               keyInfo = Console.ReadKey();
             }
+            while ( keyInfo.Key != ConsoleKey.Q );
+
+            Console.WriteLine();
+            Console.WriteLine( "Exiting..." );
          }
          catch ( CommandLineDeclarationException ex )
          {
