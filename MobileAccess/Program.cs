@@ -22,56 +22,54 @@ namespace MobileAccess
             commandLine = new CommandLine<CLArguments>();
             var arguments = commandLine.Parse( args );
 
-            var insertQuery = new WqlEventQuery( "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
-
-            var insertWatcher = new ManagementEventWatcher( insertQuery );
-            insertWatcher.EventArrived += new EventArrivedEventHandler( DeviceInsertedEvent );
-            insertWatcher.Start();
-
-            var removeQuery = new WqlEventQuery( "SELECT * FROM __InstanceDeletionEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'" );
-            var removeWatcher = new ManagementEventWatcher( removeQuery );
-            removeWatcher.EventArrived += new EventArrivedEventHandler( DeviceRemovedEvent );
-            removeWatcher.Start();
-
-            var keyInfo = new ConsoleKeyInfo();
-
-            Console.WriteLine( "Press Q to quit." );
-            Console.WriteLine( "Listening for events..." );
-
-            ManagementObjectCollection collection = null;
-            var table = "Win32_USBControllerDevice";
-            //var table = "Win32_USBHub";
-            //var table = "Win32_USBController";
-            //var table = "Win32_PnPEntity";
-            var queryString = "SELECT * FROM " + table;
-            using ( var searcher = new ManagementObjectSearcher( queryString ) )
+            if ( arguments.CommandDiscover )
             {
-               collection = searcher.Get();
-            }
+               //var devices = WmiDeviceCollection.Create();
+               var devices = WpdDeviceCollection.Create();
 
-            using ( var file = new StreamWriter( table + ".txt" ) )
-            {
-               foreach ( var device in collection )
+               if ( devices.Count == 0 )
                {
-                  foreach ( var property in device.Properties )
+                  Console.WriteLine( "No devices found." );
+               }
+               else
+               {
+                  foreach ( var device in devices )
                   {
-                     file.WriteLine( property.Name + " = " + property.Value );
-                     Console.WriteLine( property.Name + " = " + property.Value );
+                     Console.WriteLine( "\"{0}\"{1}", device.Name, arguments.ShowDeviceID ? " " + device.DeviceID : string.Empty );
                   }
-
-                  file.WriteLine();
-                  Console.WriteLine();
                }
             }
-
-            do
+            else if ( arguments.CommandFind )
             {
-               keyInfo = Console.ReadKey();
+               //var devices = WmiDeviceCollection.Create();
+               var devices = WpdDeviceCollection.Create();
+               var device = devices.First( ( item ) =>
+                  {
+                     return ( String.Compare( arguments.DeviceName, item.Name ) == 0 );
+                  } );
+               if ( device == null )
+               {
+                  Console.WriteLine( "No device found with the name \"{0}\".", arguments.DeviceName );
+               }
+               else
+               {
+                  Console.WriteLine( "Found device" );
+                  Console.WriteLine( "  Name: \"{0}\"", device.Name );
+                  if ( arguments.ShowDeviceID )
+                  {
+                     Console.WriteLine( "  DeviceID: {0}", device.DeviceID );
+                  }
+               }
             }
-            while ( keyInfo.Key != ConsoleKey.Q );
-
-            Console.WriteLine();
-            Console.WriteLine( "Exiting..." );
+            else if ( arguments.CommandCopy )
+            {
+               Console.WriteLine( "Copying..." );
+               var device = WpdDevice.Create( @"\\TSC-1114\root\cimv2:Win32_PnPEntity.DeviceID=""USB\\VID_04E8&PID_6860&MS_COMP_MTP&SAMSUNG_ANDROID\\6&38109ED&1&0000""" );
+            }
+            else
+            {
+               Console.WriteLine( commandLine.Help() );
+            }
          }
          catch ( CommandLineDeclarationException ex )
          {
@@ -98,22 +96,19 @@ namespace MobileAccess
          }
       }
 
-      private static void DeviceInsertedEvent( object sender, EventArrivedEventArgs e )
+      private static void WaitForKey( ConsoleKey key )
       {
-         var instance = (ManagementBaseObject) e.NewEvent["TargetInstance"];
-         foreach ( var property in instance.Properties )
-         {
-            Console.WriteLine( property.Name + " = " + property.Value );
-         }
-      }
+         var keyInfo = new ConsoleKeyInfo();
 
-      private static void DeviceRemovedEvent( object sender, EventArrivedEventArgs e )
-      {
-         var instance = (ManagementBaseObject) e.NewEvent["TargetInstance"];
-         foreach ( var property in instance.Properties )
+         Console.WriteLine( "Press {0} to quit.", key );
+
+         do
          {
-            Console.WriteLine( property.Name + " = " + property.Value );
+            keyInfo = Console.ReadKey();
          }
+         while ( keyInfo.Key != key );
+
+         Console.WriteLine();
       }
    }
 }
