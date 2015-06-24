@@ -2,7 +2,7 @@ using System;
 
 namespace MobileAccess
 {
-   public class PortableDevicePKeys
+   public static class PortableDevicePKeys
    {
       static PortableDevicePKeys()
       {
@@ -2188,9 +2188,14 @@ namespace MobileAccess
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_LENGTH;
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_UNITS;
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_REFERENCED_OBJECT_RESOURCE;
+
+      public static bool Equals( PortableDeviceApiLib._tagpropertykey key1, PortableDeviceApiLib._tagpropertykey key2 )
+      {
+         return ( key1.fmtid == key2.fmtid ) && ( key1.pid == key2.pid );
+      }
    } // class PortableDevicePKeys
 
-   class PortableDeviceGuids
+   public static class PortableDeviceGuids
    {
       public static Guid GUID_DEVINTERFACE_WPD = new Guid( 0x6AC27878, 0xA6FA, 0x4155, 0xBA, 0x85, 0xF9, 0x8F, 0x49, 0x1D, 0x4F, 0x33 );
       public static Guid GUID_DEVINTERFACE_WPD_PRIVATE = new Guid( 0xBA0C718F, 0x4DED, 0x49B7, 0xBD, 0xD3, 0xFA, 0xBE, 0x28, 0x66, 0x12, 0x11 );
@@ -2314,4 +2319,11 @@ namespace MobileAccess
       public static Guid WPD_OBJECT_FORMAT_ATSCTS = new Guid( 0xB9870000, 0xAE6C, 0x4804, 0x98, 0xBA, 0xC5, 0x7B, 0x46, 0x96, 0x5F, 0xE7 );
       public static Guid WPD_OBJECT_FORMAT_DVBTS = new Guid( 0xB9880000, 0xAE6C, 0x4804, 0x98, 0xBA, 0xC5, 0x7B, 0x46, 0x96, 0x5F, 0xE7 );
    } // class PortableDeviceGuids
+
+   public static class PortableDeviceResourceAccessModes
+   {
+      public const uint STGM_READ = 0x00000000U;
+      public const uint STGM_WRITE = 0x00000001U;
+      public const uint STGM_READWRITE = 0x00000002U;
+   }
 } // namespace PortableDeviceConstants

@@ -31,6 +31,13 @@ namespace MobileAccess
          private set;
       }
 
+      [Switch( "Download", Ordinal = 2, Optional = true, Groups = new int[] { 4 }, CaseSensitive = false, Description = "Downloads files from the device." )]
+      public bool CommandDownload
+      {
+         get;
+         private set;
+      }
+
       //
       // Arguments for FIND command.
       //
@@ -53,7 +60,7 @@ namespace MobileAccess
       // Arguments for UPLOAD command.
       //
 
-      [StringValue( 2, Groups = new int[] { 3 }, Description = "Source path of file or folder to upload." )]
+      [StringValue( 2, Groups = new int[] { 3 }, Description = "Path on the local machine of file(s) to upload." )]
       public string UploadSourcePath
       {
          get;
@@ -75,6 +82,31 @@ namespace MobileAccess
       }
 
       //
+      // Arguments for DOWNLOAD command.
+      //
+
+      [StringValue( 2, Groups = new[] { 4 }, Description = "Name of the device from which the file(s) will be downloaded." )]
+      public string DownloadDeviceName
+      {
+         get;
+         private set;
+      }
+
+      [StringValue( 3, Groups = new int[] { 4 }, Description = "Path on the source device from which the file(s) will be downloaded." )]
+      public string DownloadSourcePath
+      {
+         get;
+         private set;
+      }
+
+      [StringValue( 4, Groups = new int[] { 4 }, Description = "Path on the local machine where the file(s) will be downloaded." )]
+      public string DownloadTargetPath
+      {
+         get;
+         private set;
+      }
+
+      //
       // Arguments for multiple commands.
       //
 
@@ -85,14 +117,14 @@ namespace MobileAccess
          private set;
       }
 
-      [Switch( "-overwrite", Optional = true, CaseSensitive = false, Groups = new int[] { 3 }, Description = "Include to allow files to be overwritten." )]
+      [Switch( "-overwrite", Optional = true, CaseSensitive = false, Groups = new int[] { 3, 4 }, Description = "Include to allow files to be overwritten." )]
       public bool Overwrite
       {
          get;
          private set;
       }
 
-      [Switch( "-createPath", Optional = true, CaseSensitive = false, Groups = new int[] { 3 }, Description = "Include to automatically create any missing directories in the path." )]
+      [Switch( "-createPath", Optional = true, CaseSensitive = false, Groups = new int[] { 3, 4 }, Description = "Include to automatically create any missing directories in the path." )]
       public bool CreatePath
       {
          get;

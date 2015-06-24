@@ -25,29 +25,17 @@ namespace MobileAccess
       private string name;
       public string Name
       {
-         get
-         {
-            if ( this.name == null )
-            {
-               if ( this.device == null )
-               {
-                  throw new InvalidOperationException( "The object has been disposed." );
-               }
+         get { return this.name; }
+      }
 
-               IPortableDeviceContent content = null;
-               IPortableDeviceProperties properties = null;
-               this.device.Content( out content );
-               content.Properties( out properties );
+      public string OriginalFileName
+      {
+         get { return this.name; }
+      }
 
-               PortableDeviceApiLib.IPortableDeviceValues values = null;
-               properties.GetValues( this.ObjectID, null, out values );
-
-               var property = PortableDevicePKeys.WPD_DEVICE_FRIENDLY_NAME;
-               values.GetStringValue( ref property, out this.name );
-            }
-
-            return this.name;
-         }
+      public bool IsContainer
+      {
+         get { return true; }
       }
 
       public string ObjectID
@@ -80,6 +68,17 @@ namespace MobileAccess
          device.device.Open( deviceId, (IPortableDeviceValues) clientInfo );
          device.DeviceID = deviceId;
          device.device.Content( out device.content );
+
+         IPortableDeviceContent content = null;
+         IPortableDeviceProperties properties = null;
+         device.device.Content( out content );
+         content.Properties( out properties );
+
+         IPortableDeviceValues values = null;
+         properties.GetValues( device.ObjectID, null, out values );
+
+         var property = PortableDevicePKeys.WPD_DEVICE_FRIENDLY_NAME;
+         values.GetStringValue( ref property, out device.name );
 
          return device;
       }
@@ -227,23 +226,43 @@ namespace MobileAccess
 
             if ( !found )
             {
-               if ( createPath )
+               foreach ( var child in children )
                {
-                  var commander = new DeviceCommander();
-                  final = commander.CreateDirectory( final, directories[i] );
-                  children = new IWpdDeviceObject[0];
-               }
-               else
-               {
-                  var errorDirectories = new string[i + 2];
-                  errorDirectories[0] = this.Name;
-                  for ( var j = 0; j <= i; j++ )
+                  if ( child.OriginalFileName != null )
                   {
-                     errorDirectories[j + 1] = directories[j];
+                     if ( String.Compare( child.OriginalFileName, directories[i], true ) == 0 )
+                     {
+                        found = true;
+                        final = child;
+                        if ( i < directories.Length - 1 )
+                        {
+                           children = child.GetChildren();
+                        }
+                        break;
+                     }
                   }
+               }
 
-                  var errorPath = errorDirectories.DelimitedString( "\\" );
-                  throw new DirectoryNotFoundException( String.Format( "An object with the path \"{0}\" was not found.", errorPath ) );
+               if ( !found )
+               {
+                  if ( createPath )
+                  {
+                     var commander = new DeviceCommander();
+                     final = commander.CreateDirectory( final, directories[i] );
+                     children = new IWpdDeviceObject[0];
+                  }
+                  else
+                  {
+                     var errorDirectories = new string[i + 2];
+                     errorDirectories[0] = this.Name;
+                     for ( var j = 0; j <= i; j++ )
+                     {
+                        errorDirectories[j + 1] = directories[j];
+                     }
+
+                     var errorPath = errorDirectories.DelimitedString( "\\" );
+                     throw new DirectoryNotFoundException( String.Format( "An object with the path \"{0}\" was not found.", errorPath ) );
+                  }
                }
             }
          }

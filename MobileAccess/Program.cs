@@ -93,8 +93,8 @@ namespace MobileAccess
                   else
                   {
                      Console.WriteLine( "Copying..." );
-                     var deviceObject = device.ObjectFromPath( arguments.UploadTargetPath, arguments.CreatePath );
-                     Console.WriteLine( "[{0}] {1}", deviceObject.ObjectID, deviceObject.Name );
+                     var targetObject = device.ObjectFromPath( arguments.UploadTargetPath, arguments.CreatePath );
+                     //Console.WriteLine( "[{0}] {1}", targetObject.ObjectID, targetObject.Name );
                      var commander = new DeviceCommander();
                      commander.DataCopied += ( sender, e ) =>
                         {
@@ -109,7 +109,47 @@ namespace MobileAccess
                         {
                            Console.WriteLine( e.Exception.Message );
                         };
-                     commander.Download( deviceObject, arguments.UploadSourcePath, arguments.Overwrite );
+                     commander.Upload( targetObject, arguments.UploadSourcePath, arguments.Overwrite );
+                  }
+               }
+            }
+            else if ( arguments.CommandDownload )
+            {
+               var devices = WpdDeviceCollection.Create();
+               if ( devices.Count == 0 )
+               {
+                  Console.WriteLine( "No devices found." );
+               }
+               else
+               {
+                  var device = devices.First( ( item ) =>
+                  {
+                     return ( String.Compare( arguments.DownloadDeviceName, item.Name ) == 0 );
+                  } );
+                  if ( device == null )
+                  {
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                  }
+                  else
+                  {
+                     Console.WriteLine( "Copying..." );
+                     var sourceObject = device.ObjectFromPath( arguments.DownloadSourcePath, false );
+                     Console.WriteLine( "[{0}] {1}", sourceObject.ObjectID, sourceObject.Name );
+                     var commander = new DeviceCommander();
+                     commander.DataCopied += ( sender, e ) =>
+                     {
+                        var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
+                        Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
+                     };
+                     commander.DataCopyEnded += ( sender, e ) =>
+                     {
+                        Console.WriteLine();
+                     };
+                     commander.DataCopyError += ( sender, e ) =>
+                     {
+                        Console.WriteLine( e.Exception.Message );
+                     };
+                     commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite );
                   }
                }
             }

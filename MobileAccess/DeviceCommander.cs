@@ -14,12 +14,12 @@ namespace MobileAccess
       public event DataCopyEndedHandler DataCopyEnded;
       public event DataCopyErrorHandler DataCopyError;
 
-      public void Download( IWpdDeviceObject containerObject, string sourceFilePath, bool overwrite )
+      public void Upload( IWpdDeviceObject containerObject, string sourceFilePath, bool overwrite )
       {
          var fileInfo = new FileInfo( sourceFilePath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) == FileAttributes.Directory )
          {
-            this.Download( containerObject, sourceFilePath, overwrite, "*", true );
+            this.Upload( containerObject, sourceFilePath, overwrite, "*", true );
             return;
             //throw new InvalidOperationException( "Source path cannot be a directory." );
          }
@@ -103,7 +103,7 @@ namespace MobileAccess
          }
          catch ( Exception ex )
          {
-            System.Diagnostics.Trace.WriteLine( String.Format( "Failed to download file \"{0}\": {1}", sourceFilePath, ex ) );
+            System.Diagnostics.Trace.WriteLine( String.Format( "Failed to upload file \"{0}\": {1}", sourceFilePath, ex ) );
 
             if ( this.DataCopyError != null )
             {
@@ -112,7 +112,10 @@ namespace MobileAccess
          }
          finally
          {
-            Marshal.ReleaseComObject( targetStream );
+            if ( targetStream != null )
+            {
+               Marshal.ReleaseComObject( targetStream );
+            }
          }
 
          if ( this.DataCopyEnded != null )
@@ -121,13 +124,13 @@ namespace MobileAccess
          }
       }
 
-      public void Download( IWpdDeviceObject containerObject, string[] sourceFilePaths, bool overwrite )
+      public void Upload( IWpdDeviceObject containerObject, string[] sourceFilePaths, bool overwrite )
       {
          foreach ( var sourceFilePath in sourceFilePaths )
          {
             try
             {
-               this.Download( containerObject, sourceFilePath, overwrite );
+               this.Upload( containerObject, sourceFilePath, overwrite );
             }
             catch ( Exception )
             {
@@ -136,7 +139,7 @@ namespace MobileAccess
          }
       }
 
-      public void Download( IWpdDeviceObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      public void Upload( IWpdDeviceObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive )
       {
          var fileInfo = new FileInfo( sourceDirectoryPath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) != FileAttributes.Directory )
@@ -144,11 +147,40 @@ namespace MobileAccess
             throw new InvalidOperationException( "Source path must be a directory." );
          }
 
+         var directoryName = Path.GetFileName( sourceDirectoryPath );
+
+         var found = false;
+         var children = containerObject.GetChildren();
+         IWpdDeviceObject directoryObject = null;
+         foreach ( var child in children )
+         {
+            if ( String.Compare( child.Name, directoryName, true ) == 0 )
+            {
+               found = true;
+               directoryObject = child;
+               break;
+            }
+         }
+
+         if ( found )
+         {
+            if ( !overwrite )
+            {
+               throw new IOException( String.Format( "The directory \"{0}\" already exists.", directoryObject.GetPath() ) );
+            }
+
+            containerObject = directoryObject;
+         }
+         else
+         {
+            containerObject = this.CreateDirectory( containerObject, directoryName );
+         }
+
          var sourceFilePaths = Directory.GetFiles( sourceDirectoryPath,
             String.IsNullOrEmpty( searchPattern ) ? "*" : searchPattern,
             recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly );
 
-         this.Download( containerObject, sourceFilePaths, overwrite );
+         this.Upload( containerObject, sourceFilePaths, overwrite );
       }
 
       public void Delete( IWpdDeviceObject deleteObject )
@@ -183,6 +215,75 @@ namespace MobileAccess
          containerObject.Content.CreateObjectWithPropertiesOnly( values, ref objectID );
 
          return new WpdDeviceObject( objectID, containerObject, containerObject.Content );
+      }
+
+      public void Download( IWpdDeviceObject sourceObject, string targetDirectoryPath, bool overwrite )
+      {
+         if ( sourceObject.IsContainer )
+         {
+            System.Diagnostics.Trace.WriteLine( "Container" );
+         }
+
+         var targetFilePath = Path.Combine( targetDirectoryPath, sourceObject.Name );
+
+         IPortableDeviceResources resources;
+         sourceObject.Content.Transfer( out resources );
+
+         //IPortableDeviceKeyCollection keys;
+         //resources.GetSupportedResources( sourceObject.ObjectID, out keys );
+         //var count = 0U;
+         //keys.GetCount( ref count );
+
+         //for ( var i = 0U; i < count; i++ )
+         //{
+         //   _tagpropertykey key = new _tagpropertykey();
+         //   keys.GetAt( i, ref key );
+         //   System.Diagnostics.Trace.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
+         //}
+
+         var key = PortableDevicePKeys.WPD_RESOURCE_DEFAULT;
+         var optimalBufferSize = 0U;
+         IStream sourceStream = null;
+
+         resources.GetStream( sourceObject.ObjectID, ref key, PortableDeviceResourceAccessModes.STGM_READ, ref optimalBufferSize, out sourceStream );
+
+         try
+         {
+            using ( var targetStream = new FileStream( targetFilePath, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write ) )
+            {
+               var buffer = new byte[optimalBufferSize];
+               var bytesRead = 0U;
+
+               do
+               {
+                  sourceStream.RemoteRead( out buffer[0], optimalBufferSize, out bytesRead );
+                  if ( bytesRead > 0 )
+                  {
+                     targetStream.Write( buffer, 0, (int) bytesRead );
+                  }
+               }
+               while ( bytesRead > 0 );
+
+               targetStream.Flush();
+            }
+         }
+         catch ( Exception ex )
+         {
+
+            if ( this.DataCopyError != null )
+            {
+               this.DataCopyError( this, new DataCopyErrorArgs( sourceObject.GetPath(), targetFilePath, ex ) );
+            }
+
+            throw ex;
+         }
+         finally
+         {
+            if ( sourceStream != null )
+            {
+               Marshal.ReleaseComObject( sourceStream );
+            }
+         }
       }
    }
 }

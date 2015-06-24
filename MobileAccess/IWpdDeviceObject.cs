@@ -29,6 +29,16 @@ namespace MobileAccess
          get;
       }
 
+      string OriginalFileName
+      {
+         get;
+      }
+
+      bool IsContainer
+      {
+         get;
+      }
+
       IWpdDeviceObject[] GetChildren();
       string GetPath();
    }
