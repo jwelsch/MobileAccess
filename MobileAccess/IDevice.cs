@@ -17,5 +17,10 @@ namespace MobileAccess
       {
          get;
       }
+
+      void DisplayProperties();
+      void StartEnumerate();
+      IWpdDeviceObject[] GetChildren();
+      IWpdDeviceObject ObjectFromPath( string path, bool createPath );
    }
 }

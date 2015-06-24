@@ -43,28 +43,75 @@ namespace MobileAccess
             {
                //var devices = WmiDeviceCollection.Create();
                var devices = WpdDeviceCollection.Create();
-               var device = devices.First( ( item ) =>
-                  {
-                     return ( String.Compare( arguments.DeviceName, item.Name ) == 0 );
-                  } );
-               if ( device == null )
+               if ( devices.Count == 0 )
                {
-                  Console.WriteLine( "No device found with the name \"{0}\".", arguments.DeviceName );
+                  Console.WriteLine( "No devices found." );
                }
                else
                {
-                  Console.WriteLine( "Found device" );
-                  Console.WriteLine( "  Name: \"{0}\"", device.Name );
-                  if ( arguments.ShowDeviceID )
+                  var device = devices.First( ( item ) =>
+                     {
+                        return ( String.Compare( arguments.FindDeviceName, item.Name ) == 0 );
+                     } );
+                  if ( device == null )
                   {
-                     Console.WriteLine( "  DeviceID: {0}", device.DeviceID );
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                  }
+                  else
+                  {
+                     if ( arguments.FindCopyID )
+                     {
+                        ClipboardApi.Copy( device.DeviceID, true );
+                     }
+
+                     Console.WriteLine( "Found device" );
+                     Console.WriteLine( "  Name: \"{0}\"", device.Name );
+                     if ( arguments.ShowDeviceID )
+                     {
+                        Console.WriteLine( "  DeviceID: {0}", device.DeviceID );
+                     }
                   }
                }
             }
-            else if ( arguments.CommandCopy )
+            else if ( arguments.CommandUpload )
             {
-               Console.WriteLine( "Copying..." );
-               var device = WpdDevice.Create( @"\\TSC-1114\root\cimv2:Win32_PnPEntity.DeviceID=""USB\\VID_04E8&PID_6860&MS_COMP_MTP&SAMSUNG_ANDROID\\6&38109ED&1&0000""" );
+               var devices = WpdDeviceCollection.Create();
+               if ( devices.Count == 0 )
+               {
+                  Console.WriteLine( "No devices found." );
+               }
+               else
+               {
+                  var device = devices.First( ( item ) =>
+                     {
+                        return ( String.Compare( arguments.UploadDeviceName, item.Name ) == 0 );
+                     } );
+                  if ( device == null )
+                  {
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                  }
+                  else
+                  {
+                     Console.WriteLine( "Copying..." );
+                     var deviceObject = device.ObjectFromPath( arguments.UploadTargetPath, arguments.CreatePath );
+                     Console.WriteLine( "[{0}] {1}", deviceObject.ObjectID, deviceObject.Name );
+                     var commander = new DeviceCommander();
+                     commander.DataCopied += ( sender, e ) =>
+                        {
+                           var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
+                           Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
+                        };
+                     commander.DataCopyEnded += ( sender, e ) =>
+                        {
+                           Console.WriteLine();
+                        };
+                     commander.DataCopyError += ( sender, e ) =>
+                        {
+                           Console.WriteLine( e.Exception.Message );
+                        };
+                     commander.Download( deviceObject, arguments.UploadSourcePath, arguments.Overwrite );
+                  }
+               }
             }
             else
             {

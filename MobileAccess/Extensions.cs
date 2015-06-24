@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Reflection;
+using System.Collections;
 
 namespace MobileAccess
 {
@@ -46,6 +47,27 @@ namespace MobileAccess
          }
 
          output.Remove( output.Length - 1, 1 );
+
+         return output.ToString();
+      }
+
+      public static string DelimitedString( this IEnumerable enumerable, string delimiter = ", " )
+      {
+         var output = new StringBuilder();
+
+         foreach ( var item in enumerable )
+         {
+            if ( item == null )
+            {
+               output.AppendFormat( "{0}{1}", "<[null]>", delimiter );
+            }
+            else
+            {
+               output.AppendFormat( "{0}{1}", item.ToString(), delimiter );
+            }
+         }
+
+         output.Remove( output.Length - delimiter.Length, delimiter.Length );
 
          return output.ToString();
       }

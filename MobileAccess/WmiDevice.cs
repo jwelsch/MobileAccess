@@ -6,38 +6,50 @@ using System.Threading.Tasks;
 
 namespace MobileAccess
 {
-   public class WmiDevice : IDevice
-   {
-      public string Name
-      {
-         get;
-         set;
-      }
+   //public class WmiDevice : IDevice
+   //{
+   //   public string Name
+   //   {
+   //      get;
+   //      set;
+   //   }
 
-      public string DeviceID
-      {
-         get;
-         set;
-      }
+   //   public string DeviceID
+   //   {
+   //      get;
+   //      set;
+   //   }
 
-      #region IDisposable implementation
+   //   public void DisplayProperties()
+   //   {
+   //   }
 
-      public void Dispose()
-      {
-         this.Dispose( true );
-         GC.SuppressFinalize( this );
-      }
+   //   public void StartEnumerate()
+   //   {
+   //   }
 
-      private void Dispose( bool disposing )
-      {
-         if ( disposing )
-         {
-            // Free managed objects here.
-         }
+   //   public void GetChildObjects()
+   //   {
+   //   }
 
-         // Free unmanaged objects here.
-      }
+   //   #region IDisposable implementation
 
-      #endregion
-   }
+   //   public void Dispose()
+   //   {
+   //      this.Dispose( true );
+   //      GC.SuppressFinalize( this );
+   //   }
+
+   //   private void Dispose( bool disposing )
+   //   {
+   //      if ( disposing )
+   //      {
+   //         // Free managed objects here.
+   //      }
+
+   //      // Free unmanaged objects here.
+   //   }
+
+   //   #endregion
+   //}
 }

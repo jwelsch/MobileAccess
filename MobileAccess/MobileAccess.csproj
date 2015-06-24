@@ -50,8 +50,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CLArguments.cs" />
+    <Compile Include="ClipboardApi.cs" />
+    <Compile Include="DataCopied.cs" />
+    <Compile Include="DeviceCommander.cs" />
     <Compile Include="IDevice.cs" />
+    <Compile Include="IWpdDeviceObject.cs" />
     <Compile Include="PortableDeviceConstants.cs" />
+    <Compile Include="PropVariant.cs" />
     <Compile Include="WmiDevice.cs" />
     <Compile Include="WmiDeviceCollection.cs" />
     <Compile Include="WpdDevice.cs" />
@@ -65,6 +70,7 @@
     <Compile Include="VolumeInformer.cs" />
     <Compile Include="VolumeManagement.cs" />
     <Compile Include="Win32Defines.cs" />
+    <Compile Include="WpdDeviceObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
