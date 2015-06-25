@@ -7,11 +7,31 @@ using System.Threading.Tasks;
 
 namespace MobileAccess
 {
+   //
+   // Adapted from: https://github.com/max-kotasek/Wildcard
+   //
+
    public static class WildcardSearch
    {
+      public static Tuple<string, string> SplitPattern( string path )
+      {
+         var slash = path.LastIndexOf( '\\' );
+         var wildcard = path.LastIndexOfAny( new char[] { '*', '?' } );
 
+         if ( wildcard < 0 )
+         {
+            return new Tuple<string, string>( path, string.Empty );
+         }
 
-      private static int get_next_interesting_character( string pattern )
+         if ( wildcard < slash )
+         {
+            throw new ArgumentException( "The wildcard can only be in the last section of the path." );
+         }
+
+         return new Tuple<string, string>( path.Substring( 0, slash ), path.Substring( slash + 1 ) );
+      }
+
+      private static int GetNextInterestingCharacter( string pattern )
       {
          var w = pattern.IndexOf( '*' );
          var q = pattern.IndexOf( '?' );
@@ -28,19 +48,17 @@ namespace MobileAccess
          {
             return w;
          }
-         else
-         {
-            return Math.Min( w, q );
-         }
 
+         return Math.Min( w, q );
       }
 
-      private static string lstrip( string pattern, string stripChars )
+      private static string LStrip( string pattern, string stripChars )
       {
-         int index = 0;
-         for ( int i = 0; i < pattern.Length; i++ )
+         var index = 0;
+
+         for ( var i = 0; i < pattern.Length; i++ )
          {
-            string s = pattern[i].ToString();
+            var s = pattern[i].ToString();
             if ( stripChars.IndexOf( s ) >= 0 )
             {
                index++;
@@ -50,24 +68,27 @@ namespace MobileAccess
                return pattern.Substring( index );
             }
          }
-         //All characters were stripped.
-         return "";
+
+         // All characters were stripped.
+         return string.Empty;
       }
 
-      public static bool matchOneOf( string pattern, Collection<String> inputs )
+      public static bool MatchOneOf( string pattern, Collection<String> inputs )
       {
-         foreach ( string input in inputs )
+         foreach ( var input in inputs )
          {
-            if ( !match( pattern, input ) )
+            if ( !WildcardSearch.Match( pattern, input ) )
             {
                continue;
             }
+
             return true;
          }
+
          return false;
       }
 
-      public static bool match( string pattern, string input )
+      public static bool Match( string pattern, string input )
       {
          if ( pattern == null || pattern.Length == 0 )
          {
@@ -79,27 +100,27 @@ namespace MobileAccess
             return false;
          }
 
-         int next_index = 0;
-         string pattern_slice = "";
+         var nextIndex = 0;
+         var patternSlice = string.Empty;
+
          while ( pattern.Length > 0 )
          {
-
             if ( pattern[0] == '*' )
             {
-               pattern = lstrip( pattern, "*?" );
+               pattern = WildcardSearch.LStrip( pattern, "*?" );
                if ( pattern.Length == 0 )
                {
                   return true;
                }
 
-               next_index = get_next_interesting_character( pattern );
-               pattern_slice = pattern.Substring( 0, next_index );
+               nextIndex = WildcardSearch.GetNextInterestingCharacter( pattern );
+               patternSlice = pattern.Substring( 0, nextIndex );
 
-               if ( input.IndexOf( pattern_slice ) >= 0 )
+               if ( input.IndexOf( patternSlice ) >= 0 )
                {
-                  pattern = pattern.Substring( next_index );
-                  int input_index = input.LastIndexOf( pattern_slice );
-                  input = input.Substring( input_index + pattern_slice.Length );
+                  pattern = pattern.Substring( nextIndex );
+                  var inputIndex = input.LastIndexOf( patternSlice );
+                  input = input.Substring( inputIndex + patternSlice.Length );
                }
                else
                {
@@ -118,26 +139,28 @@ namespace MobileAccess
             }
             else
             {
-               next_index = get_next_interesting_character( pattern );
-               pattern_slice = pattern.Substring( 0, next_index );
-               pattern = pattern.Substring( next_index );
+               nextIndex = GetNextInterestingCharacter( pattern );
+               patternSlice = pattern.Substring( 0, nextIndex );
+               pattern = pattern.Substring( nextIndex );
 
-               if ( input.Length < next_index )
+               if ( input.Length < nextIndex )
                {
                   return false;
                }
 
-               string match_slice = input.Substring( 0, next_index );
-               if ( !match_slice.Equals( pattern_slice ) )
+               var matchSlice = input.Substring( 0, nextIndex );
+
+               if ( !matchSlice.Equals( patternSlice ) )
                {
                   return false;
                }
-               input = input.Substring( next_index );
+
+               input = input.Substring( nextIndex );
             }
 
          }
-         return ( input.Length == 0 );
 
+         return ( input.Length == 0 );
       }
    }
 }

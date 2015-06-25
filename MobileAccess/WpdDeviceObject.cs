@@ -47,6 +47,12 @@ namespace MobileAccess
          get { return this.isContainer; }
       }
 
+      private ulong size;
+      public ulong Size
+      {
+         get { return this.size; }
+      }
+
       public WpdDeviceObject( string objectID, IWpdDeviceObject parent, IPortableDeviceContent content )
       {
          this.ObjectID = objectID;
@@ -69,23 +75,31 @@ namespace MobileAccess
          var count = 0U;
          keys.GetCount( ref count );
          var propertiesRead = 0;
+         var maxProperties = this.IsContainer ? 2 : 3;
 
-         for ( var i = 0U; i < count && propertiesRead < 2; i++ )
+         for ( var i = 0U; i < count && propertiesRead < maxProperties; i++ )
          {
             _tagpropertykey key = new _tagpropertykey();
             keys.GetAt( i, ref key );
 
-            if ( PortableDevicePKeys.Equals( key, PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME ) )
+            property = PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME;
+            if ( PortableDevicePKeys.Equals( key, property ) )
             {
-               property = PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME;
                values.GetStringValue( ref property, out this.originalFileName );
                propertiesRead++;
             }
 
-            if ( PortableDevicePKeys.Equals( key, PortableDevicePKeys.WPD_OBJECT_NAME ) )
+            property = PortableDevicePKeys.WPD_OBJECT_NAME;
+            if ( PortableDevicePKeys.Equals( key, property ) )
             {
-               property = PortableDevicePKeys.WPD_OBJECT_NAME;
                values.GetStringValue( ref property, out this.name );
+               propertiesRead++;
+            }
+
+            property = PortableDevicePKeys.WPD_OBJECT_SIZE;
+            if ( PortableDevicePKeys.Equals( key, property ) )
+            {
+               values.GetUnsignedLargeIntegerValue( ref property, out this.size );
                propertiesRead++;
             }
          }
@@ -115,12 +129,14 @@ namespace MobileAccess
 
       public string GetPath()
       {
+         var name = this.OriginalFileName == null ? this.Name : this.OriginalFileName;
+
          if ( this.Parent == null )
          {
-            return this.OriginalFileName == null ? this.Name : this.OriginalFileName;
+            return name;
          }
 
-         return this.Parent.GetPath() + Path.DirectorySeparatorChar + this.Name;
+         return this.Parent.GetPath() + Path.DirectorySeparatorChar + name;
       }
 
       public string GetNameOnDevice()
@@ -142,8 +158,36 @@ namespace MobileAccess
          {
             _tagpropertykey key = new _tagpropertykey();
             keys.GetAt( i, ref key );
-            System.Diagnostics.Trace.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
-            Console.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
+            var output = String.Format( "[{0}] {1}", i, PortableDevicePKeys.FindKeyName( key ) );
+            System.Diagnostics.Trace.WriteLine( output );
+            Console.WriteLine( output );
+         }
+      }
+
+      public void DumpProperties()
+      {
+         IPortableDeviceProperties properties;
+         this.Content.Properties( out properties );
+
+         IPortableDeviceKeyCollection keys;
+         IPortableDeviceValues values;
+         var count = 0U;
+
+         properties.GetSupportedProperties( this.ObjectID, out keys );
+         properties.GetValues( this.ObjectID, keys, out values );
+
+         values.GetCount( ref count );
+
+         for ( var i = 0U; i < count; i++ )
+         {
+            _tagpropertykey key = new _tagpropertykey();
+            tag_inner_PROPVARIANT variant = new tag_inner_PROPVARIANT();
+
+            values.GetAt( i, ref key, ref variant );
+
+            var output = String.Format( "[{0}] {1}", i, PortableDevicePKeys.FindKeyName( key ) );
+            System.Diagnostics.Trace.WriteLine( output );
+            Console.WriteLine( output );
          }
       }
    }

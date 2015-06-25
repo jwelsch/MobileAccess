@@ -148,33 +148,37 @@ namespace MobileAccess
             throw new InvalidOperationException( "Source path must be a directory." );
          }
 
-         var directoryName = Path.GetFileName( sourceDirectoryPath );
-
-         var found = false;
-         var children = containerObject.GetChildren();
-         IWpdDeviceObject directoryObject = null;
-         foreach ( var child in children )
+         if ( String.IsNullOrEmpty( searchPattern ) )
          {
-            if ( String.Compare( child.Name, directoryName, true ) == 0 )
-            {
-               found = true;
-               directoryObject = child;
-               break;
-            }
-         }
+            var directoryName = Path.GetFileName( sourceDirectoryPath );
 
-         if ( found )
-         {
-            if ( !overwrite )
+            var found = false;
+            var children = containerObject.GetChildren();
+            IWpdDeviceObject directoryObject = null;
+
+            foreach ( var child in children )
             {
-               throw new IOException( String.Format( "The directory \"{0}\" already exists.", directoryObject.GetPath() ) );
+               if ( String.Compare( child.Name, directoryName, true ) == 0 )
+               {
+                  found = true;
+                  directoryObject = child;
+                  break;
+               }
             }
 
-            containerObject = directoryObject;
-         }
-         else
-         {
-            containerObject = this.CreateDirectory( containerObject, directoryName );
+            if ( found )
+            {
+               if ( !overwrite )
+               {
+                  throw new IOException( String.Format( "The directory \"{0}\" already exists.", directoryObject.GetPath() ) );
+               }
+
+               containerObject = directoryObject;
+            }
+            else
+            {
+               containerObject = this.CreateDirectory( containerObject, directoryName );
+            }
          }
 
          var sourceFilePaths = Directory.GetFiles( sourceDirectoryPath,
@@ -228,6 +232,12 @@ namespace MobileAccess
          }
 
          var targetFilePath = Path.Combine( targetDirectoryPath, sourceObject.OriginalFileName );
+         var sourceFilePath = sourceObject.GetPath();
+
+         if ( this.DataCopyStarted != null )
+         {
+            this.DataCopyStarted( this, new DataCopyStartedArgs( sourceFilePath, targetFilePath ) );
+         }
 
          IPortableDeviceResources resources;
          sourceObject.Content.Transfer( out resources );
@@ -244,6 +254,7 @@ namespace MobileAccess
             {
                var buffer = new byte[optimalBufferSize];
                var bytesRead = 0U;
+               var totalBytesRead = 0U;
 
                do
                {
@@ -251,6 +262,12 @@ namespace MobileAccess
                   if ( bytesRead > 0 )
                   {
                      targetStream.Write( buffer, 0, (int) bytesRead );
+                     totalBytesRead += bytesRead;
+
+                     if ( this.DataCopied != null )
+                     {
+                        this.DataCopied( this, new DataCopiedArgs( sourceFilePath, targetFilePath, sourceObject.Size, totalBytesRead, bytesRead ) );
+                     }
                   }
                }
                while ( bytesRead > 0 );
@@ -276,6 +293,11 @@ namespace MobileAccess
                Marshal.ReleaseComObject( sourceStream );
             }
          }
+
+         if ( this.DataCopyEnded != null )
+         {
+            this.DataCopyEnded( this, new DataCopyEndedArgs( sourceFilePath, targetFilePath ) );
+         }
       }
 
       public void Download( IWpdDeviceObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive )
@@ -290,11 +312,9 @@ namespace MobileAccess
 
          foreach ( var child in children )
          {
-            //
-            // Run search pattern.
-            //
+            var childPath = child.GetPath();
 
-            if ( String.IsNullOrEmpty( searchPattern ) || WildcardSearch.match( searchPattern, child.GetPath() ) )
+            if ( String.IsNullOrEmpty( searchPattern ) || WildcardSearch.Match( searchPattern, childPath ) )
             {
                if ( child.IsContainer )
                {

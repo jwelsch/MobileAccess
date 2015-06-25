@@ -130,5 +130,12 @@ namespace MobileAccess
          get;
          private set;
       }
+
+      [Switch( "-recursive", Optional = true, CaseSensitive = false, Groups = new int[] { 3, 4 }, Description = "Include to recurse through sub directories." )]
+      public bool Recursive
+      {
+         get;
+         private set;
+      }
    }
 }

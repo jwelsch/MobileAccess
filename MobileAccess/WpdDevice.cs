@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MobileAccess
 {
-   public class WpdDevice : IDevice, IWpdDeviceObject
+   public class WpdDevice : IDevice, IWpdDeviceObject, IDisposable
    {
       private PortableDeviceClass device = null;
 
@@ -36,6 +36,11 @@ namespace MobileAccess
       public bool IsContainer
       {
          get { return true; }
+      }
+
+      public ulong Size
+      {
+         get { return 0UL; }
       }
 
       public string ObjectID

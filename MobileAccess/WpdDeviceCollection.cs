@@ -14,10 +14,15 @@ namespace MobileAccess
    //   http://blogs.msdn.com/b/dimeby8/archive/tags/c_2300_/
    //
 
-   public class WpdDeviceCollection : Collection<IDevice>
+   public class WpdDeviceCollection : Collection<IDevice>, IDisposable
    {
       private WpdDeviceCollection()
       {
+      }
+
+      ~WpdDeviceCollection()
+      {
+         this.DisposeItems();
       }
 
       public static WpdDeviceCollection Create()
@@ -69,5 +74,34 @@ namespace MobileAccess
 
          return null;
       }
+
+      private void DisposeItems()
+      {
+         foreach ( var item in this )
+         {
+            item.Dispose();
+         }
+      }
+
+      #region IDisposable implementation
+
+      public void Dispose()
+      {
+         this.Dispose( true );
+         GC.SuppressFinalize( this );
+      }
+
+      private void Dispose( bool disposing )
+      {
+         if ( disposing )
+         {
+            // Free managed objects here.
+            this.DisposeItems();
+         }
+
+         // Free unmanaged objects here.
+      }
+
+      #endregion
    }
 }

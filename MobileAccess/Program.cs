@@ -22,32 +22,20 @@ namespace MobileAccess
             commandLine = new CommandLine<CLArguments>();
             var arguments = commandLine.Parse( args );
 
-            if ( arguments.CommandDiscover )
+            using ( var devices = WpdDeviceCollection.Create() )
             {
-               //var devices = WmiDeviceCollection.Create();
-               var devices = WpdDeviceCollection.Create();
-
                if ( devices.Count == 0 )
                {
                   Console.WriteLine( "No devices found." );
                }
-               else
+               else if ( arguments.CommandDiscover )
                {
                   foreach ( var device in devices )
                   {
                      Console.WriteLine( "\"{0}\"{1}", device.Name, arguments.ShowDeviceID ? " " + device.DeviceID : string.Empty );
                   }
                }
-            }
-            else if ( arguments.CommandFind )
-            {
-               //var devices = WmiDeviceCollection.Create();
-               var devices = WpdDeviceCollection.Create();
-               if ( devices.Count == 0 )
-               {
-                  Console.WriteLine( "No devices found." );
-               }
-               else
+               else if ( arguments.CommandFind )
                {
                   var device = devices.Find( arguments.FindDeviceName, false );
                   if ( device == null )
@@ -69,15 +57,7 @@ namespace MobileAccess
                      }
                   }
                }
-            }
-            else if ( arguments.CommandUpload )
-            {
-               var devices = WpdDeviceCollection.Create();
-               if ( devices.Count == 0 )
-               {
-                  Console.WriteLine( "No devices found." );
-               }
-               else
+               else if ( arguments.CommandUpload )
                {
                   var device = devices.Find( arguments.UploadDeviceName, false );
                   if ( device == null )
@@ -86,9 +66,11 @@ namespace MobileAccess
                   }
                   else
                   {
-                     Console.WriteLine( "Copying..." );
+                     Console.WriteLine( "Uploading..." );
+
+                     var components = WildcardSearch.SplitPattern( arguments.UploadSourcePath );
                      var targetObject = device.ObjectFromPath( arguments.UploadTargetPath, arguments.CreatePath );
-                     //Console.WriteLine( "[{0}] {1}", targetObject.ObjectID, targetObject.Name );
+
                      var commander = new DeviceCommander();
                      commander.DataCopied += ( sender, e ) =>
                         {
@@ -103,18 +85,18 @@ namespace MobileAccess
                         {
                            Console.WriteLine( e.Exception.Message );
                         };
-                     commander.Upload( targetObject, arguments.UploadSourcePath, arguments.Overwrite );
+
+                     if ( String.IsNullOrEmpty( components.Item2 ) )
+                     {
+                        commander.Upload( targetObject, components.Item1, arguments.Overwrite );
+                     }
+                     else
+                     {
+                        commander.Upload( targetObject, components.Item1, arguments.Overwrite, components.Item2, arguments.Recursive );
+                     }
                   }
                }
-            }
-            else if ( arguments.CommandDownload )
-            {
-               var devices = WpdDeviceCollection.Create();
-               if ( devices.Count == 0 )
-               {
-                  Console.WriteLine( "No devices found." );
-               }
-               else
+               else if ( arguments.CommandDownload )
                {
                   var device = devices.Find( arguments.DownloadDeviceName, false );
                   if ( device == null )
@@ -123,11 +105,14 @@ namespace MobileAccess
                   }
                   else
                   {
-                     //var o = device.ObjectFromPath( "Card\\Music\\Air\\Moon Safari\\04 - Kelly Watch the Stars.mp3", false );
+                     Console.WriteLine( "Downloading..." );
 
-                     Console.WriteLine( "Copying..." );
-                     var sourceObject = device.ObjectFromPath( arguments.DownloadSourcePath, false );
-                     Console.WriteLine( "[{0}] {1}", sourceObject.ObjectID, sourceObject.Name );
+                     //var o = device.ObjectFromPath( "Card\\Download\\IMG_1749.jpg", false );
+                     //( (WpdDeviceObject) o ).DumpProperties();
+
+                     var components = WildcardSearch.SplitPattern( arguments.DownloadSourcePath );
+                     var sourceObject = device.ObjectFromPath( components.Item1, false );
+
                      var commander = new DeviceCommander();
                      commander.DataCopied += ( sender, e ) =>
                      {
@@ -142,13 +127,21 @@ namespace MobileAccess
                      {
                         Console.WriteLine( e.Exception.Message );
                      };
-                     commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite );
+
+                     if ( String.IsNullOrEmpty( components.Item2 ) )
+                     {
+                        commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite );
+                     }
+                     else
+                     {
+                        commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite, components.Item2, arguments.Recursive );
+                     }
                   }
                }
-            }
-            else
-            {
-               Console.WriteLine( commandLine.Help() );
+               else
+               {
+                  Console.WriteLine( commandLine.Help() );
+               }
             }
          }
          catch ( CommandLineDeclarationException ex )

@@ -1,9 +1,14 @@
 using System;
+using System.Reflection;
 
 namespace MobileAccess
 {
    public static class PortableDevicePKeys
    {
+      //
+      // More information, including value types: https://msdn.microsoft.com/en-us/library/windows/hardware/ff597893(v=vs.85).aspx
+      //
+
       static PortableDevicePKeys()
       {
          WPD_PROPERTY_NULL.fmtid = new Guid( 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 );
@@ -1641,6 +1646,11 @@ namespace MobileAccess
          WPD_SECTION_DATA_REFERENCED_OBJECT_RESOURCE.fmtid = new Guid( 0x516AFD2B, 0xC64E, 0x44F0, 0x98, 0xDC, 0xBE, 0xE1, 0xC8, 0x8F, 0x7D, 0x66 );
          WPD_SECTION_DATA_REFERENCED_OBJECT_RESOURCE.pid = 5;
 
+         // Vender specific properties.
+         // PID is set by the vendor.
+         // It is set to zero here arbitrarily.
+         WPD_PROPERTIES_MTP_VENDOR_EXTENDED_OBJECT_PROPS.fmtid = new Guid( 0x4D545058, 0x4FCE, 0x4578, 0x95, 0xC8, 0x86, 0x98, 0xA9, 0xBC, 0x0F, 0x49 );
+         WPD_SECTION_DATA_REFERENCED_OBJECT_RESOURCE.pid = 0;
       }
 
       public static PortableDeviceApiLib._tagpropertykey WPD_PROPERTY_NULL;
@@ -2188,10 +2198,33 @@ namespace MobileAccess
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_LENGTH;
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_UNITS;
       public static PortableDeviceApiLib._tagpropertykey WPD_SECTION_DATA_REFERENCED_OBJECT_RESOURCE;
+      public static PortableDeviceApiLib._tagpropertykey WPD_PROPERTIES_MTP_VENDOR_EXTENDED_OBJECT_PROPS;
 
       public static bool Equals( PortableDeviceApiLib._tagpropertykey key1, PortableDeviceApiLib._tagpropertykey key2 )
       {
          return ( key1.fmtid == key2.fmtid ) && ( key1.pid == key2.pid );
+      }
+
+      public static string FindKeyName( PortableDeviceApiLib._tagpropertykey key )
+      {
+         var fields = typeof( PortableDevicePKeys ).GetFields( BindingFlags.Static | BindingFlags.Public );
+
+         foreach ( var field in fields )
+         {
+            var fieldKey = (PortableDeviceApiLib._tagpropertykey) field.GetValue( null );
+
+            if ( PortableDevicePKeys.Equals( fieldKey, key ) )
+            {
+               return field.Name;
+            }
+         }
+
+         return string.Empty;
+      }
+
+      public static string FindKeyName( Guid fmtid, uint pid )
+      {
+         return PortableDevicePKeys.FindKeyName( new PortableDeviceApiLib._tagpropertykey() { fmtid = fmtid, pid = pid } );
       }
    } // class PortableDevicePKeys
 
@@ -2318,6 +2351,26 @@ namespace MobileAccess
       public static Guid WPD_OBJECT_FORMAT_AVCHD = new Guid( 0xB9860000, 0xAE6C, 0x4804, 0x98, 0xBA, 0xC5, 0x7B, 0x46, 0x96, 0x5F, 0xE7 );
       public static Guid WPD_OBJECT_FORMAT_ATSCTS = new Guid( 0xB9870000, 0xAE6C, 0x4804, 0x98, 0xBA, 0xC5, 0x7B, 0x46, 0x96, 0x5F, 0xE7 );
       public static Guid WPD_OBJECT_FORMAT_DVBTS = new Guid( 0xB9880000, 0xAE6C, 0x4804, 0x98, 0xBA, 0xC5, 0x7B, 0x46, 0x96, 0x5F, 0xE7 );
+
+      // Vender specific device properties.
+      public static Guid WPD_PROPERTIES_MTP_VENDOR_EXTENDED_DEVICE_PROPS = new Guid( 0x4D545058, 0x8900, 0x40B3, 0x8F, 0x1D, 0xDC, 0x24, 0x6E, 0x1E, 0x83, 0x70 );
+
+      public static string FindGuidName( Guid guid )
+      {
+         var fields = typeof( PortableDeviceGuids ).GetFields( BindingFlags.Static | BindingFlags.Public );
+
+         foreach ( var field in fields )
+         {
+            var value = (Guid) field.GetValue( null );
+
+            if ( value == guid )
+            {
+               return field.Name;
+            }
+         }
+
+         return string.Empty;
+      }
    } // class PortableDeviceGuids
 
    public static class PortableDeviceResourceAccessModes

@@ -39,6 +39,11 @@ namespace MobileAccess
          get;
       }
 
+      ulong Size
+      {
+         get;
+      }
+
       IWpdDeviceObject[] GetChildren();
       string GetPath();
       string GetNameOnDevice();
