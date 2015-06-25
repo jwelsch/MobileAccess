@@ -64,38 +64,30 @@ namespace MobileAccess
          values.GetGuidValue( ref property, out value );
          this.isContainer = value == PortableDeviceGuids.WPD_CONTENT_TYPE_FOLDER;
 
-         var hasOriginalFileName = false;
-         var hasObjectName = false;
          IPortableDeviceKeyCollection keys;
          properties.GetSupportedProperties( this.ObjectID, out keys );
          var count = 0U;
          keys.GetCount( ref count );
-         for ( var i = 0U; i < count; i++ )
+         var propertiesRead = 0;
+
+         for ( var i = 0U; i < count && propertiesRead < 2; i++ )
          {
             _tagpropertykey key = new _tagpropertykey();
             keys.GetAt( i, ref key );
 
             if ( PortableDevicePKeys.Equals( key, PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME ) )
             {
-               hasOriginalFileName = true;
+               property = PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME;
+               values.GetStringValue( ref property, out this.originalFileName );
+               propertiesRead++;
             }
 
             if ( PortableDevicePKeys.Equals( key, PortableDevicePKeys.WPD_OBJECT_NAME ) )
             {
-               hasObjectName = true;
+               property = PortableDevicePKeys.WPD_OBJECT_NAME;
+               values.GetStringValue( ref property, out this.name );
+               propertiesRead++;
             }
-         }
-
-         if ( hasOriginalFileName )
-         {
-            property = PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME;
-            values.GetStringValue( ref property, out this.originalFileName );
-         }
-
-         if ( hasObjectName )
-         {
-            property = PortableDevicePKeys.WPD_OBJECT_NAME;
-            values.GetStringValue( ref property, out this.name );
          }
       }
 
@@ -125,10 +117,34 @@ namespace MobileAccess
       {
          if ( this.Parent == null )
          {
-            return this.Name;
+            return this.OriginalFileName == null ? this.Name : this.OriginalFileName;
          }
 
          return this.Parent.GetPath() + Path.DirectorySeparatorChar + this.Name;
+      }
+
+      public string GetNameOnDevice()
+      {
+         return this.Name == null ? this.OriginalFileName : this.Name;
+      }
+
+      public void DumpSupportedResources()
+      {
+         IPortableDeviceResources resources;
+         IPortableDeviceKeyCollection keys;
+         var count = 0U;
+
+         this.Content.Transfer( out resources );
+         resources.GetSupportedResources( this.ObjectID, out keys );
+         keys.GetCount( ref count );
+
+         for ( var i = 0U; i < count; i++ )
+         {
+            _tagpropertykey key = new _tagpropertykey();
+            keys.GetAt( i, ref key );
+            System.Diagnostics.Trace.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
+            Console.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
+         }
       }
    }
 }

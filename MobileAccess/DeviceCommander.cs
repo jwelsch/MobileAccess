@@ -25,6 +25,7 @@ namespace MobileAccess
          }
 
          var fileName = Path.GetFileName( sourceFilePath );
+         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension( sourceFilePath );
          var targetPath = containerObject.GetPath() + Path.DirectorySeparatorChar + fileName;
 
          var children = containerObject.GetChildren();
@@ -68,7 +69,7 @@ namespace MobileAccess
          values.SetStringValue( PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME, fileName );
 
          // The name of the object on the device.
-         values.SetStringValue( PortableDevicePKeys.WPD_OBJECT_NAME, fileName );
+         values.SetStringValue( PortableDevicePKeys.WPD_OBJECT_NAME, fileNameWithoutExtension );
 
          IStream targetStream = null;
          var optimalTransferSizeBytes = 0U;
@@ -221,25 +222,15 @@ namespace MobileAccess
       {
          if ( sourceObject.IsContainer )
          {
-            System.Diagnostics.Trace.WriteLine( "Container" );
+            var children = sourceObject.GetChildren();
+            this.Download( children, targetDirectoryPath, overwrite );
+            return;
          }
 
-         var targetFilePath = Path.Combine( targetDirectoryPath, sourceObject.Name );
+         var targetFilePath = Path.Combine( targetDirectoryPath, sourceObject.OriginalFileName );
 
          IPortableDeviceResources resources;
          sourceObject.Content.Transfer( out resources );
-
-         //IPortableDeviceKeyCollection keys;
-         //resources.GetSupportedResources( sourceObject.ObjectID, out keys );
-         //var count = 0U;
-         //keys.GetCount( ref count );
-
-         //for ( var i = 0U; i < count; i++ )
-         //{
-         //   _tagpropertykey key = new _tagpropertykey();
-         //   keys.GetAt( i, ref key );
-         //   System.Diagnostics.Trace.WriteLine( String.Format( "[{0}] fmtid: {1}, pid: {2}", i, key.fmtid, key.pid ) );
-         //}
 
          var key = PortableDevicePKeys.WPD_RESOURCE_DEFAULT;
          var optimalBufferSize = 0U;
@@ -269,6 +260,7 @@ namespace MobileAccess
          }
          catch ( Exception ex )
          {
+            System.Diagnostics.Trace.WriteLine( String.Format( "Failed to download file \"{0}\": {1}", sourceObject.GetPath(), ex ) );
 
             if ( this.DataCopyError != null )
             {
@@ -283,6 +275,49 @@ namespace MobileAccess
             {
                Marshal.ReleaseComObject( sourceStream );
             }
+         }
+      }
+
+      public void Download( IWpdDeviceObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      {
+         if ( !sourceObject.IsContainer )
+         {
+            this.Download( sourceObject, targetDirectoryPath, overwrite );
+            return;
+         }
+
+         var children = sourceObject.GetChildren();
+
+         foreach ( var child in children )
+         {
+            //
+            // Run search pattern.
+            //
+
+            if ( String.IsNullOrEmpty( searchPattern ) || WildcardSearch.match( searchPattern, child.GetPath() ) )
+            {
+               if ( child.IsContainer )
+               {
+                  if ( recursive )
+                  {
+                     this.Download( child, targetDirectoryPath, overwrite, searchPattern, recursive );
+                  }
+               }
+               else
+               {
+                  this.Download( child, targetDirectoryPath, overwrite );
+               }
+            }
+         }
+      }
+
+      public void Download( IWpdDeviceObject[] sourceObjects, string targetDirectoryPath, bool overwrite )
+      {
+         foreach ( var sourceObject in sourceObjects )
+         {
+            var name = sourceObject.GetNameOnDevice();
+
+            this.Download( sourceObject, targetDirectoryPath, overwrite );
          }
       }
    }

@@ -49,10 +49,7 @@ namespace MobileAccess
                }
                else
                {
-                  var device = devices.First( ( item ) =>
-                     {
-                        return ( String.Compare( arguments.FindDeviceName, item.Name ) == 0 );
-                     } );
+                  var device = devices.Find( arguments.FindDeviceName, false );
                   if ( device == null )
                   {
                      Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
@@ -82,10 +79,7 @@ namespace MobileAccess
                }
                else
                {
-                  var device = devices.First( ( item ) =>
-                     {
-                        return ( String.Compare( arguments.UploadDeviceName, item.Name ) == 0 );
-                     } );
+                  var device = devices.Find( arguments.UploadDeviceName, false );
                   if ( device == null )
                   {
                      Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
@@ -122,16 +116,15 @@ namespace MobileAccess
                }
                else
                {
-                  var device = devices.First( ( item ) =>
-                  {
-                     return ( String.Compare( arguments.DownloadDeviceName, item.Name ) == 0 );
-                  } );
+                  var device = devices.Find( arguments.DownloadDeviceName, false );
                   if ( device == null )
                   {
                      Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
                   }
                   else
                   {
+                     //var o = device.ObjectFromPath( "Card\\Music\\Air\\Moon Safari\\04 - Kelly Watch the Stars.mp3", false );
+
                      Console.WriteLine( "Copying..." );
                      var sourceObject = device.ObjectFromPath( arguments.DownloadSourcePath, false );
                      Console.WriteLine( "[{0}] {1}", sourceObject.ObjectID, sourceObject.Name );

@@ -202,21 +202,21 @@ namespace MobileAccess
 
       public IWpdDeviceObject ObjectFromPath( string path, bool createPath )
       {
-         var directories = path.Split( new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries );
+         var entries = path.Split( new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries );
 
          IWpdDeviceObject final = this;
          var found = false;
          var children = this.GetChildren();
-         for ( var i = 0; i < directories.Length; i++ )
+         for ( var i = 0; i < entries.Length; i++ )
          {
             found = false;
             foreach ( var child in children )
             {
-               if ( String.Compare( child.Name, directories[i], true ) == 0 )
+               if ( String.Compare( child.Name, entries[i], true ) == 0 )
                {
                   found = true;
                   final = child;
-                  if ( i < directories.Length - 1 )
+                  if ( i < entries.Length - 1 )
                   {
                      children = child.GetChildren();
                   }
@@ -230,11 +230,11 @@ namespace MobileAccess
                {
                   if ( child.OriginalFileName != null )
                   {
-                     if ( String.Compare( child.OriginalFileName, directories[i], true ) == 0 )
+                     if ( String.Compare( child.OriginalFileName, entries[i], true ) == 0 )
                      {
                         found = true;
                         final = child;
-                        if ( i < directories.Length - 1 )
+                        if ( i < entries.Length - 1 )
                         {
                            children = child.GetChildren();
                         }
@@ -248,20 +248,20 @@ namespace MobileAccess
                   if ( createPath )
                   {
                      var commander = new DeviceCommander();
-                     final = commander.CreateDirectory( final, directories[i] );
+                     final = commander.CreateDirectory( final, entries[i] );
                      children = new IWpdDeviceObject[0];
                   }
                   else
                   {
-                     var errorDirectories = new string[i + 2];
-                     errorDirectories[0] = this.Name;
+                     var errorEntries = new string[i + 2];
+                     errorEntries[0] = this.Name;
                      for ( var j = 0; j <= i; j++ )
                      {
-                        errorDirectories[j + 1] = directories[j];
+                        errorEntries[j + 1] = entries[j];
                      }
 
-                     var errorPath = errorDirectories.DelimitedString( "\\" );
-                     throw new DirectoryNotFoundException( String.Format( "An object with the path \"{0}\" was not found.", errorPath ) );
+                     var errorPath = errorEntries.DelimitedString( "\\" );
+                     throw new FileNotFoundException( String.Format( "An object with the path \"{0}\" was not found.", errorPath ) );
                   }
                }
             }
@@ -271,6 +271,11 @@ namespace MobileAccess
       }
 
       public string GetPath()
+      {
+         return this.Name;
+      }
+
+      public string GetNameOnDevice()
       {
          return this.Name;
       }

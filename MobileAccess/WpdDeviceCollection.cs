@@ -43,5 +43,31 @@ namespace MobileAccess
 
          return collection;
       }
+
+      public IDevice Find( string deviceName, bool caseSensitive )
+      {
+         foreach ( var item in this )
+         {
+            if ( String.Compare( deviceName, item.Name, !caseSensitive ) == 0 )
+            {
+               return item;
+            }
+         }
+
+         return null;
+      }
+
+      public IDevice Find( string deviceID )
+      {
+         foreach ( var item in this )
+         {
+            if ( String.Compare( deviceID, item.DeviceID, true ) == 0 )
+            {
+               return item;
+            }
+         }
+
+         return null;
+      }
    }
 }
