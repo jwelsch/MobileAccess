@@ -1,20 +1,16 @@
-﻿using PortableDeviceApiLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using PortableDeviceApiLib;
 
 namespace MobileAccess
 {
-   public interface IWpdDeviceObject
+   public interface IWpdObject
    {
       string ObjectID
       {
          get;
       }
 
-      IWpdDeviceObject Parent
+      IWpdObject Parent
       {
          get;
       }
@@ -44,7 +40,7 @@ namespace MobileAccess
          get;
       }
 
-      IWpdDeviceObject[] GetChildren();
+      IWpdObject[] GetChildren();
       string GetPath();
       string GetNameOnDevice();
    }

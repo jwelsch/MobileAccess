@@ -1,13 +1,5 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
 using CommandLineLib;
-using System.Runtime.InteropServices;
-using System.Linq;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Management;
 
 namespace MobileAccess
 {
@@ -62,7 +54,7 @@ namespace MobileAccess
                   var device = devices.Find( arguments.UploadDeviceName, false );
                   if ( device == null )
                   {
-                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.UploadDeviceName );
                   }
                   else
                   {
@@ -75,6 +67,7 @@ namespace MobileAccess
                      commander.DataCopied += ( sender, e ) =>
                         {
                            var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
+                           Console.Write( "\r                                                                               " );
                            Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
                         };
                      commander.DataCopyEnded += ( sender, e ) =>
@@ -101,14 +94,11 @@ namespace MobileAccess
                   var device = devices.Find( arguments.DownloadDeviceName, false );
                   if ( device == null )
                   {
-                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.DownloadDeviceName );
                   }
                   else
                   {
                      Console.WriteLine( "Downloading..." );
-
-                     //var o = device.ObjectFromPath( "Card\\Download\\IMG_1749.jpg", false );
-                     //( (WpdDeviceObject) o ).DumpProperties();
 
                      var components = WildcardSearch.SplitPattern( arguments.DownloadSourcePath );
                      var sourceObject = device.ObjectFromPath( components.Item1, false );
@@ -117,6 +107,7 @@ namespace MobileAccess
                      commander.DataCopied += ( sender, e ) =>
                      {
                         var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
+                        Console.Write( "\r                                                                               " );
                         Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
                      };
                      commander.DataCopyEnded += ( sender, e ) =>

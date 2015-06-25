@@ -1,7 +1,5 @@
 ﻿using PortableDeviceApiLib;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -14,7 +12,7 @@ namespace MobileAccess
       public event DataCopyEndedHandler DataCopyEnded;
       public event DataCopyErrorHandler DataCopyError;
 
-      public void Upload( IWpdDeviceObject containerObject, string sourceFilePath, bool overwrite )
+      public void Upload( IWpdObject containerObject, string sourceFilePath, bool overwrite )
       {
          var fileInfo = new FileInfo( sourceFilePath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) == FileAttributes.Directory )
@@ -125,7 +123,7 @@ namespace MobileAccess
          }
       }
 
-      public void Upload( IWpdDeviceObject containerObject, string[] sourceFilePaths, bool overwrite )
+      public void Upload( IWpdObject containerObject, string[] sourceFilePaths, bool overwrite )
       {
          foreach ( var sourceFilePath in sourceFilePaths )
          {
@@ -140,7 +138,7 @@ namespace MobileAccess
          }
       }
 
-      public void Upload( IWpdDeviceObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      public void Upload( IWpdObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive )
       {
          var fileInfo = new FileInfo( sourceDirectoryPath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) != FileAttributes.Directory )
@@ -154,7 +152,7 @@ namespace MobileAccess
 
             var found = false;
             var children = containerObject.GetChildren();
-            IWpdDeviceObject directoryObject = null;
+            IWpdObject directoryObject = null;
 
             foreach ( var child in children )
             {
@@ -188,7 +186,7 @@ namespace MobileAccess
          this.Upload( containerObject, sourceFilePaths, overwrite );
       }
 
-      public void Delete( IWpdDeviceObject deleteObject )
+      public void Delete( IWpdObject deleteObject )
       {
          var variant = PropVariant.StringToPropVariant( deleteObject.ObjectID );
          var objectIds = (IPortableDevicePropVariantCollection) new PortableDeviceTypesLib.PortableDevicePropVariantCollection();
@@ -199,7 +197,7 @@ namespace MobileAccess
          deleteObject.Content.Delete( 0, objectIds, ref results );
       }
 
-      public IWpdDeviceObject CreateDirectory( IWpdDeviceObject containerObject, string directoryName )
+      public IWpdObject CreateDirectory( IWpdObject containerObject, string directoryName )
       {
          var values = new PortableDeviceTypesLib.PortableDeviceValues() as IPortableDeviceValues;
 
@@ -219,10 +217,10 @@ namespace MobileAccess
 
          containerObject.Content.CreateObjectWithPropertiesOnly( values, ref objectID );
 
-         return new WpdDeviceObject( objectID, containerObject, containerObject.Content );
+         return new WpdObject( objectID, containerObject, containerObject.Content );
       }
 
-      public void Download( IWpdDeviceObject sourceObject, string targetDirectoryPath, bool overwrite )
+      public void Download( IWpdObject sourceObject, string targetDirectoryPath, bool overwrite )
       {
          if ( sourceObject.IsContainer )
          {
@@ -300,7 +298,7 @@ namespace MobileAccess
          }
       }
 
-      public void Download( IWpdDeviceObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      public void Download( IWpdObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive )
       {
          if ( !sourceObject.IsContainer )
          {
@@ -331,7 +329,7 @@ namespace MobileAccess
          }
       }
 
-      public void Download( IWpdDeviceObject[] sourceObjects, string targetDirectoryPath, bool overwrite )
+      public void Download( IWpdObject[] sourceObjects, string targetDirectoryPath, bool overwrite )
       {
          foreach ( var sourceObject in sourceObjects )
          {

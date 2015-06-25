@@ -54,24 +54,16 @@
     <Compile Include="DataCopied.cs" />
     <Compile Include="DeviceCommander.cs" />
     <Compile Include="IDevice.cs" />
-    <Compile Include="IWpdDeviceObject.cs" />
+    <Compile Include="IWpdObject.cs" />
     <Compile Include="PortableDeviceConstants.cs" />
     <Compile Include="PropVariant.cs" />
     <Compile Include="WildcardSearch.cs" />
-    <Compile Include="WmiDevice.cs" />
-    <Compile Include="WmiDeviceCollection.cs" />
     <Compile Include="WpdDevice.cs" />
     <Compile Include="WpdDeviceCollection.cs" />
-    <Compile Include="DeviceEventListener.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="Kernel32.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SetupApi.cs" />
-    <Compile Include="VolumeInformer.cs" />
-    <Compile Include="VolumeManagement.cs" />
-    <Compile Include="Win32Defines.cs" />
-    <Compile Include="WpdDeviceObject.cs" />
+    <Compile Include="WpdObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

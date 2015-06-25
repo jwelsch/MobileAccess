@@ -2,14 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MobileAccess
 {
-   public class WpdDevice : IDevice, IWpdDeviceObject, IDisposable
+   public class WpdDevice : IDevice, IWpdObject, IDisposable
    {
       private PortableDeviceClass device = null;
 
@@ -54,7 +51,7 @@ namespace MobileAccess
          get { return this.content; }
       }
 
-      public IWpdDeviceObject Parent
+      public IWpdObject Parent
       {
          get { return null; }
       }
@@ -183,12 +180,12 @@ namespace MobileAccess
          this.Enumerate( ref this.content, this.ObjectID, "" );
       }
 
-      public IWpdDeviceObject[] GetChildren()
+      public IWpdObject[] GetChildren()
       {
          IEnumPortableDeviceObjectIDs pEnum;
          this.Content.EnumObjects( 0, this.ObjectID, null, out pEnum );
 
-         var objects = new List<IWpdDeviceObject>();
+         var objects = new List<IWpdObject>();
          var cFetched = 0U;
          do
          {
@@ -197,7 +194,7 @@ namespace MobileAccess
 
             if ( cFetched > 0 )
             {
-               objects.Add( new WpdDeviceObject( objectID, this, this.Content ) );
+               objects.Add( new WpdObject( objectID, this, this.Content ) );
             }
          }
          while ( cFetched > 0 );
@@ -205,11 +202,11 @@ namespace MobileAccess
          return objects.ToArray();
       }
 
-      public IWpdDeviceObject ObjectFromPath( string path, bool createPath )
+      public IWpdObject ObjectFromPath( string path, bool createPath )
       {
          var entries = path.Split( new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries );
 
-         IWpdDeviceObject final = this;
+         IWpdObject final = this;
          var found = false;
          var children = this.GetChildren();
          for ( var i = 0; i < entries.Length; i++ )
@@ -254,7 +251,7 @@ namespace MobileAccess
                   {
                      var commander = new DeviceCommander();
                      final = commander.CreateDirectory( final, entries[i] );
-                     children = new IWpdDeviceObject[0];
+                     children = new IWpdObject[0];
                   }
                   else
                   {

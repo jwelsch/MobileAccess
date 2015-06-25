@@ -2,14 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MobileAccess
 {
-   public class WpdDeviceObject : IWpdDeviceObject
+   public class WpdObject : IWpdObject
    {
       public string ObjectID
       {
@@ -17,7 +13,7 @@ namespace MobileAccess
          private set;
       }
 
-      public IWpdDeviceObject Parent
+      public IWpdObject Parent
       {
          get;
          private set;
@@ -53,7 +49,7 @@ namespace MobileAccess
          get { return this.size; }
       }
 
-      public WpdDeviceObject( string objectID, IWpdDeviceObject parent, IPortableDeviceContent content )
+      public WpdObject( string objectID, IWpdObject parent, IPortableDeviceContent content )
       {
          this.ObjectID = objectID;
          this.Parent = parent;
@@ -105,12 +101,12 @@ namespace MobileAccess
          }
       }
 
-      public IWpdDeviceObject[] GetChildren()
+      public IWpdObject[] GetChildren()
       {
          IEnumPortableDeviceObjectIDs pEnum;
          this.Content.EnumObjects( 0, this.ObjectID, null, out pEnum );
 
-         var objects = new List<WpdDeviceObject>();
+         var objects = new List<WpdObject>();
          var cFetched = 0U;
          do
          {
@@ -119,7 +115,7 @@ namespace MobileAccess
 
             if ( cFetched > 0 )
             {
-               objects.Add( new WpdDeviceObject( objectID, this, this.Content ) );
+               objects.Add( new WpdObject( objectID, this, this.Content ) );
             }
          }
          while ( cFetched > 0 );

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MobileAccess
 {
@@ -20,7 +16,7 @@ namespace MobileAccess
 
       void DisplayProperties();
       void StartEnumerate();
-      IWpdDeviceObject[] GetChildren();
-      IWpdDeviceObject ObjectFromPath( string path, bool createPath );
+      IWpdObject[] GetChildren();
+      IWpdObject ObjectFromPath( string path, bool createPath );
    }
 }
