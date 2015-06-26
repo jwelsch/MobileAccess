@@ -62,6 +62,11 @@ namespace MobileAccess
          private set;
       }
 
+      public string[] GetChildPaths( string searchPattern, bool recursive )
+      {
+         throw new NotImplementedException();
+      }
+
       public static WpdDevice Create( string deviceId )
       {
          var clientInfo = new PortableDeviceTypesLib.PortableDeviceValuesClass();

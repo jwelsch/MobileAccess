@@ -43,5 +43,6 @@ namespace MobileAccess
       IWpdObject[] GetChildren();
       string GetPath();
       string GetNameOnDevice();
+      string[] GetChildPaths( string searchPattern, bool recursive );
    }
 }

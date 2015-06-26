@@ -340,25 +340,38 @@ namespace MobileAccess
             return;
          }
 
-         var children = sourceObject.GetChildren();
+         var childPaths = sourceObject.GetChildPaths( searchPattern, recursive );
 
-         foreach ( var child in children )
+         //
+         // TODO: Change Upload to Download and source/target paths.
+         //
+
+         if ( sourceDirectoryPath[sourceDirectoryPath.Length - 1] != '\\' )
          {
-            var childPath = child.GetPath();
+            sourceDirectoryPath += '\\';
+         }
 
-            if ( String.IsNullOrEmpty( searchPattern ) || WildcardSearch.Match( searchPattern, childPath ) )
+         foreach ( var sourceFilePath in sourceFilePaths )
+         {
+            var slash = sourceFilePath.LastIndexOf( '\\' );
+
+            if ( slash < 0 )
             {
-               if ( child.IsContainer )
-               {
-                  if ( recursive )
-                  {
-                     this.Download( child, targetDirectoryPath, overwrite, searchPattern, recursive );
-                  }
-               }
-               else
-               {
-                  this.Download( child, targetDirectoryPath, overwrite );
-               }
+               continue;
+            }
+
+            if ( slash != sourceDirectoryPath.Length - 1 )
+            {
+               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
+
+               var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
+               var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
+
+               this.Upload( targetObject, sourceFilePath, overwrite );
+            }
+            else
+            {
+               this.Upload( containerObject, sourceFilePath, overwrite );
             }
          }
       }

@@ -140,6 +140,29 @@ namespace MobileAccess
          return this.Name == null ? this.OriginalFileName : this.Name;
       }
 
+      public string[] GetChildPaths( string searchPattern, bool recursive )
+      {
+         var children = this.GetChildren();
+
+         if ( children.Length == 0 )
+         {
+            var path = this.GetPath();
+            return WildcardSearch.Match( searchPattern, path ) ? new string[] { path } : new string[0];
+         }
+
+         var paths = new List<string>();
+         foreach ( var child in children )
+         {
+            if ( !child.IsContainer || recursive )
+            {
+               var childPaths = child.GetChildPaths( searchPattern, recursive );
+               paths.AddRange( childPaths );
+            }
+         }
+
+         return paths.ToArray();
+      }
+
       public void DumpSupportedResources()
       {
          IPortableDeviceResources resources;
