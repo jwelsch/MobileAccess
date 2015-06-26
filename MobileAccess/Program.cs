@@ -27,26 +27,21 @@ namespace MobileAccess
                      Console.WriteLine( "\"{0}\"{1}", device.Name, arguments.ShowDeviceID ? " " + device.DeviceID : string.Empty );
                   }
                }
-               else if ( arguments.CommandFind )
+               else if ( arguments.CommandInfo )
                {
-                  var device = devices.Find( arguments.FindDeviceName, false );
+                  var device = devices.Find( arguments.InfoDeviceName, false );
                   if ( device == null )
                   {
-                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.FindDeviceName );
+                     Console.WriteLine( "No device found with the name \"{0}\".", arguments.InfoDeviceName );
                   }
                   else
                   {
-                     if ( arguments.FindCopyID )
+                     if ( arguments.InfoCopyID )
                      {
                         ClipboardApi.Copy( device.DeviceID, true );
                      }
 
-                     Console.WriteLine( "Found device" );
-                     Console.WriteLine( "  Name: \"{0}\"", device.Name );
-                     if ( arguments.ShowDeviceID )
-                     {
-                        Console.WriteLine( "  DeviceID: {0}", device.DeviceID );
-                     }
+                     device.DisplayProperties();
                   }
                }
                else if ( arguments.CommandUpload )
@@ -75,7 +70,6 @@ namespace MobileAccess
                         };
                      commander.DataCopyEnded += ( sender, e ) =>
                         {
-                           //Console.WriteLine();
                         };
                      commander.DataCopyError += ( sender, e ) =>
                         {
@@ -120,7 +114,6 @@ namespace MobileAccess
                      };
                      commander.DataCopyEnded += ( sender, e ) =>
                      {
-                        //Console.WriteLine();
                      };
                      commander.DataCopyError += ( sender, e ) =>
                      {

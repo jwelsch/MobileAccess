@@ -62,11 +62,27 @@ namespace MobileAccess
       [FieldOffset( 8 )]
       public byte byteValue;
       [FieldOffset( 8 )]
+      public sbyte sbyteValue;
+      [FieldOffset( 8 )]
+      public short shortValue;
+      [FieldOffset( 8 )]
+      public ushort ushortValue;
+      [FieldOffset( 8 )]
+      public int intValue;
+      [FieldOffset( 8 )]
+      public uint uintValue;
+      [FieldOffset( 8 )]
       public long longValue;
+      [FieldOffset( 8 )]
+      public ulong ulongValue;
       [FieldOffset( 8 )]
       public double dateValue;
       [FieldOffset( 8 )]
-      public short boolValue;
+      public double doubleValue;
+      [FieldOffset( 8 )]
+      public float floatValue;
+      [FieldOffset( 8 )]
+      public sbyte boolValue;
 
       public DateTime ToDateTime()
       {
@@ -86,6 +102,115 @@ namespace MobileAccess
          }
 
          this.dateValue = dt.ToOADate();
+      }
+
+      public byte ToByte()
+      {
+         if ( this.variantType != VariantType.VT_UI1 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.byteValue;
+      }
+
+      public sbyte ToSByte()
+      {
+         if ( this.variantType != VariantType.VT_I1 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.sbyteValue;
+      }
+
+      public short ToShort()
+      {
+         if ( this.variantType != VariantType.VT_I2 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.shortValue;
+      }
+
+      public ushort ToUShort()
+      {
+         if ( this.variantType != VariantType.VT_UI2 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.ushortValue;
+      }
+
+      public int ToInt()
+      {
+         if ( this.variantType != VariantType.VT_I4 && this.variantType != VariantType.VT_INT )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.intValue;
+      }
+
+      public uint ToUInt32()
+      {
+         if ( this.variantType != VariantType.VT_UI4 && this.variantType != VariantType.VT_UINT )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.uintValue;
+      }
+
+      public long ToLong()
+      {
+         if ( this.variantType != VariantType.VT_I8 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.longValue;
+      }
+
+      public float ToFloat()
+      {
+         if ( this.variantType != VariantType.VT_R4 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.floatValue;
+      }
+
+      public double ToDouble()
+      {
+         if ( this.variantType != VariantType.VT_R8 )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         return this.doubleValue;
+      }
+
+      public bool ToBool()
+      {
+         if ( this.variantType != VariantType.VT_BOOL )
+         {
+            throw new InvalidOperationException( "Cannot be converted to type." );
+         }
+
+         if ( this.boolValue == 0 )
+         {
+            return false;
+         }
+         else if ( this.boolValue == -1 )
+         {
+            return true;
+         }
+
+         throw new FormatException( String.Format( "Boolean value was \"{0}\".", this.boolValue ) );
       }
 
       public static tag_inner_PROPVARIANT MarshalTo( PropVariant propVariant )

@@ -16,8 +16,8 @@ namespace MobileAccess
          private set;
       }
 
-      [Switch( "Find", Ordinal = 1, Optional = true, Groups = new int[] { 2 }, CaseSensitive = false, Description = "Finds the specified MTP-capable device." )]
-      public bool CommandFind
+      [Switch( "Info", Ordinal = 1, Optional = true, Groups = new int[] { 2 }, CaseSensitive = false, Description = "Displays information about the specified MTP-capable device." )]
+      public bool CommandInfo
       {
          get;
          private set;
@@ -38,18 +38,18 @@ namespace MobileAccess
       }
 
       //
-      // Arguments for FIND command.
+      // Arguments for INFO command.
       //
 
-      [StringValue( 2, Groups = new int[] { 2 }, Description = "Name of the device to find." )]
-      public string FindDeviceName
+      [StringValue( 2, Groups = new int[] { 2 }, Description = "Name of the device to for which information will be displayed." )]
+      public string InfoDeviceName
       {
          get;
          private set;
       }
 
       [Switch( "-copyId", Optional = true, CaseSensitive = false, Groups = new int[] { 2 }, Description = "Copies the device ID to the clipboard." )]
-      public bool FindCopyID
+      public bool InfoCopyID
       {
          get;
          private set;

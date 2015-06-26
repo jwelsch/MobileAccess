@@ -189,10 +189,7 @@ namespace MobileAccess
             String.IsNullOrEmpty( searchPattern ) ? "*" : searchPattern,
             recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly );
 
-         if ( sourceDirectoryPath[sourceDirectoryPath.Length - 1] != '\\' )
-         {
-            sourceDirectoryPath += '\\';
-         }
+         sourceDirectoryPath = sourceDirectoryPath.EnsureLastCharacter( '\\', true );
 
          foreach ( var sourceFilePath in sourceFilePaths )
          {
