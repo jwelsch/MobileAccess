@@ -63,22 +63,26 @@ namespace MobileAccess
                      var components = WildcardSearch.SplitPattern( arguments.UploadSourcePath );
                      var targetObject = device.ObjectFromPath( arguments.UploadTargetPath, arguments.CreatePath );
 
-                     var commander = new DeviceCommander();
+                     var commander = new DeviceCommander( device );
+                     commander.DataCopyStarted += ( sender, e ) =>
+                        {
+                           Console.WriteLine( "\r{0}", e.SourcePath );
+                        };
                      commander.DataCopied += ( sender, e ) =>
                         {
                            var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
-                           Console.Write( "\r                                                                               " );
-                           Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
+                           Console.Write( "\r  {0}/{1} bytes ({2}%)", e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
                         };
                      commander.DataCopyEnded += ( sender, e ) =>
                         {
-                           Console.WriteLine();
+                           //Console.WriteLine();
                         };
                      commander.DataCopyError += ( sender, e ) =>
                         {
                            Console.WriteLine( e.Exception.Message );
                         };
 
+                     Console.WriteLine();
                      if ( String.IsNullOrEmpty( components.Item2 ) )
                      {
                         commander.Upload( targetObject, components.Item1, arguments.Overwrite );
@@ -87,6 +91,7 @@ namespace MobileAccess
                      {
                         commander.Upload( targetObject, components.Item1, arguments.Overwrite, components.Item2, arguments.Recursive );
                      }
+                     Console.WriteLine( "Completed" );
                   }
                }
                else if ( arguments.CommandDownload )
@@ -103,22 +108,26 @@ namespace MobileAccess
                      var components = WildcardSearch.SplitPattern( arguments.DownloadSourcePath );
                      var sourceObject = device.ObjectFromPath( components.Item1, false );
 
-                     var commander = new DeviceCommander();
+                     var commander = new DeviceCommander( device );
+                     commander.DataCopyStarted += ( sender, e ) =>
+                     {
+                        Console.WriteLine( "\r{0}", e.SourcePath );
+                     };
                      commander.DataCopied += ( sender, e ) =>
                      {
                         var percent = 100.0 * ( (double) e.CopiedBytes / (double) e.MaxBytes );
-                        Console.Write( "\r                                                                               " );
-                        Console.Write( "\r{0}: {1}/{2} bytes ({3}%)", e.SourcePath, e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
+                        Console.Write( "\r  {0}/{1} bytes ({2}%)", e.CopiedBytes, e.MaxBytes, percent.ToString( "G3" ) );
                      };
                      commander.DataCopyEnded += ( sender, e ) =>
                      {
-                        Console.WriteLine();
+                        //Console.WriteLine();
                      };
                      commander.DataCopyError += ( sender, e ) =>
                      {
                         Console.WriteLine( e.Exception.Message );
                      };
 
+                     Console.WriteLine();
                      if ( String.IsNullOrEmpty( components.Item2 ) )
                      {
                         commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite );
@@ -127,6 +136,7 @@ namespace MobileAccess
                      {
                         commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite, components.Item2, arguments.Recursive );
                      }
+                     Console.WriteLine( "Completed" );
                   }
                }
                else

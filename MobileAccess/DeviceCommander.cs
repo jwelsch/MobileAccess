@@ -12,6 +12,13 @@ namespace MobileAccess
       public event DataCopyEndedHandler DataCopyEnded;
       public event DataCopyErrorHandler DataCopyError;
 
+      private IWpdDevice device;
+
+      public DeviceCommander( IWpdDevice device )
+      {
+         this.device = device;
+      }
+
       public void Upload( IWpdObject containerObject, string sourceFilePath, bool overwrite )
       {
          var fileInfo = new FileInfo( sourceFilePath );
@@ -183,7 +190,34 @@ namespace MobileAccess
             String.IsNullOrEmpty( searchPattern ) ? "*" : searchPattern,
             recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly );
 
-         this.Upload( containerObject, sourceFilePaths, overwrite );
+         if ( sourceDirectoryPath[sourceDirectoryPath.Length - 1] != '\\' )
+         {
+            sourceDirectoryPath += '\\';
+         }
+
+         foreach ( var sourceFilePath in sourceFilePaths )
+         {
+            var slash = sourceFilePath.LastIndexOf( '\\' );
+
+            if ( slash < 0 )
+            {
+               continue;
+            }
+
+            if ( slash != sourceDirectoryPath.Length - 1 )
+            {
+               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
+
+               var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
+               var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
+
+               this.Upload( targetObject, sourceFilePath, overwrite );
+            }
+            else
+            {
+               this.Upload( containerObject, sourceFilePath, overwrite );
+            }
+         }
       }
 
       public void Delete( IWpdObject deleteObject )

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace MobileAccess
 {
-   public class WpdDevice : IDevice, IWpdObject, IDisposable
+   public class WpdDevice : IWpdDevice, IWpdObject, IDisposable
    {
       private PortableDeviceClass device = null;
 
@@ -206,10 +206,17 @@ namespace MobileAccess
       {
          var entries = path.Split( new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries );
 
+         var start = 0;
+
+         if ( ( entries.Length > 0 ) && ( String.Compare( entries[0], this.Name ) == 0 ) )
+         {
+            start = 1;
+         }
+
          IWpdObject final = this;
          var found = false;
          var children = this.GetChildren();
-         for ( var i = 0; i < entries.Length; i++ )
+         for ( var i = start; i < entries.Length; i++ )
          {
             found = false;
             foreach ( var child in children )
@@ -249,7 +256,7 @@ namespace MobileAccess
                {
                   if ( createPath )
                   {
-                     var commander = new DeviceCommander();
+                     var commander = new DeviceCommander( this );
                      final = commander.CreateDirectory( final, entries[i] );
                      children = new IWpdObject[0];
                   }

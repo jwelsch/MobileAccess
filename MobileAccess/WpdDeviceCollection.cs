@@ -10,7 +10,7 @@ namespace MobileAccess
    //   http://blogs.msdn.com/b/dimeby8/archive/tags/c_2300_/
    //
 
-   public class WpdDeviceCollection : Collection<IDevice>, IDisposable
+   public class WpdDeviceCollection : Collection<IWpdDevice>, IDisposable
    {
       private WpdDeviceCollection()
       {
@@ -45,7 +45,7 @@ namespace MobileAccess
          return collection;
       }
 
-      public IDevice Find( string deviceName, bool caseSensitive )
+      public IWpdDevice Find( string deviceName, bool caseSensitive )
       {
          foreach ( var item in this )
          {
@@ -58,7 +58,7 @@ namespace MobileAccess
          return null;
       }
 
-      public IDevice Find( string deviceID )
+      public IWpdDevice Find( string deviceID )
       {
          foreach ( var item in this )
          {

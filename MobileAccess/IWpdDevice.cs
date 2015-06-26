@@ -2,7 +2,7 @@
 
 namespace MobileAccess
 {
-   public interface IDevice : IDisposable
+   public interface IWpdDevice : IDisposable
    {
       string Name
       {

@@ -53,7 +53,7 @@
     <Compile Include="ClipboardApi.cs" />
     <Compile Include="DataCopied.cs" />
     <Compile Include="DeviceCommander.cs" />
-    <Compile Include="IDevice.cs" />
+    <Compile Include="IWpdDevice.cs" />
     <Compile Include="IWpdObject.cs" />
     <Compile Include="PortableDeviceConstants.cs" />
     <Compile Include="PropVariant.cs" />
