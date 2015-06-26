@@ -25,16 +25,15 @@ namespace MobileAccess
       {
          var deviceManager = new PortableDeviceManager();
 
-         var deviceIds = new string[1];
-         var deviceIdCount = 1U;
-         deviceManager.GetDevices( ref deviceIds[0], ref deviceIdCount );
+         var deviceIdCount = 0U;
+         deviceManager.GetDevices( null, ref deviceIdCount );
 
          var collection = new WpdDeviceCollection();
 
          if ( deviceIdCount > 0 )
          {
-            deviceIds = new string[deviceIdCount];
-            deviceManager.GetDevices( ref deviceIds[0], ref deviceIdCount );
+            var deviceIds = new string[deviceIdCount];
+            deviceManager.GetDevices( deviceIds, ref deviceIdCount );
 
             foreach ( var deviceId in deviceIds )
             {

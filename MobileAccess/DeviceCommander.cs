@@ -340,16 +340,9 @@ namespace MobileAccess
             return;
          }
 
-         var childPaths = sourceObject.GetChildPaths( searchPattern, recursive );
+         var sourceFilePaths = sourceObject.GetChildPaths( searchPattern, recursive );
 
-         //
-         // TODO: Change Upload to Download and source/target paths.
-         //
-
-         if ( sourceDirectoryPath[sourceDirectoryPath.Length - 1] != '\\' )
-         {
-            sourceDirectoryPath += '\\';
-         }
+         targetDirectoryPath = targetDirectoryPath.EnsureLastCharacter( '\\', true );
 
          foreach ( var sourceFilePath in sourceFilePaths )
          {
@@ -360,19 +353,19 @@ namespace MobileAccess
                continue;
             }
 
-            if ( slash != sourceDirectoryPath.Length - 1 )
-            {
-               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
+            //if ( slash != targetDirectoryPath.Length - 1 )
+            //{
+            //   var extra = sourceFilePath.Substring( targetDirectoryPath.Length, slash - targetDirectoryPath.Length );
 
-               var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
-               var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
+            //   var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
+            //   var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
 
-               this.Upload( targetObject, sourceFilePath, overwrite );
-            }
-            else
-            {
-               this.Upload( containerObject, sourceFilePath, overwrite );
-            }
+            //   this.Download( targetObject, targetDirectoryPath, overwrite );
+            //}
+            //else
+            //{
+            //   this.Download( containerObject, targetDirectoryPath, overwrite );
+            //}
          }
       }
 

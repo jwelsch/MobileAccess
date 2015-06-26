@@ -71,5 +71,33 @@ namespace MobileAccess
 
          return output.ToString();
       }
+
+      public static string EnsureCharacter( this string value, int position, char character, bool insert = false )
+      {
+         if ( ( position < 0 ) || ( position >= value.Length ) )
+         {
+            throw new ArgumentOutOfRangeException( "position" );
+         }
+
+         if ( value[position] != character )
+         {
+            var newValue = new StringBuilder( value.Substring( 0, position + ( position == value.Length - 1 ? 1 : 0 ) ) );
+            newValue.Append( character );
+            newValue.Append( value.Substring( position + ( position == value.Length - 1 || !insert ? 1 : 0 ) ) );
+            return newValue.ToString();
+         }
+
+         return value;
+      }
+
+      public static string EnsureLastCharacter( this string value, char character, bool insert = false )
+      {
+         return value.EnsureCharacter( value.Length - 1, character, insert );
+      }
+
+      public static string EnsureFirstCharacter( this string value, char character, bool insert = false )
+      {
+         return value.EnsureCharacter( 0, character, insert );
+      }
    }
 }
