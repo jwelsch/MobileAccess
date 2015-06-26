@@ -63,8 +63,6 @@
     <Compile Include="PortableDeviceConstants.cs" />
     <Compile Include="PropVariant.cs" />
     <Compile Include="WildcardSearch.cs" />
-    <Compile Include="WmiDevice.cs" />
-    <Compile Include="WmiDeviceCollection.cs" />
     <Compile Include="WpdDevice.cs" />
     <Compile Include="WpdDeviceCollection.cs" />
     <Compile Include="Extensions.cs" />

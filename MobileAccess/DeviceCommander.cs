@@ -26,7 +26,6 @@ namespace MobileAccess
          {
             this.Upload( containerObject, sourceFilePath, overwrite, "*", true );
             return;
-            //throw new InvalidOperationException( "Source path cannot be a directory." );
          }
 
          var fileName = Path.GetFileName( sourceFilePath );
@@ -36,7 +35,7 @@ namespace MobileAccess
          var children = containerObject.GetChildren();
          foreach ( var child in children )
          {
-            if ( ( String.Compare( child.Name, fileName, true ) == 0 ) )
+            if ( ( String.Compare( child.OriginalFileName, fileName, true ) == 0 ) )
             {
                if ( overwrite )
                {
@@ -340,9 +339,10 @@ namespace MobileAccess
             return;
          }
 
+         var sourceDirectoryPath = sourceObject.GetPath();
          var sourceFilePaths = sourceObject.GetChildPaths( searchPattern, recursive );
 
-         targetDirectoryPath = targetDirectoryPath.EnsureLastCharacter( '\\', true );
+         sourceDirectoryPath = sourceDirectoryPath.EnsureLastCharacter( '\\', true );
 
          foreach ( var sourceFilePath in sourceFilePaths )
          {
@@ -353,19 +353,25 @@ namespace MobileAccess
                continue;
             }
 
-            //if ( slash != targetDirectoryPath.Length - 1 )
-            //{
-            //   var extra = sourceFilePath.Substring( targetDirectoryPath.Length, slash - targetDirectoryPath.Length );
+            var sourceFileObject = this.device.ObjectFromPath( sourceFilePath, true );
 
-            //   var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
-            //   var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
+            if ( slash != sourceDirectoryPath.Length - 1 )
+            {
+               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
 
-            //   this.Download( targetObject, targetDirectoryPath, overwrite );
-            //}
-            //else
-            //{
-            //   this.Download( containerObject, targetDirectoryPath, overwrite );
-            //}
+               var targetDirectoryExtraPath = targetDirectoryPath + Path.DirectorySeparatorChar + extra;
+
+               if ( !Directory.Exists( targetDirectoryExtraPath ) )
+               {
+                  Directory.CreateDirectory( targetDirectoryExtraPath );
+               }
+
+               this.Download( sourceFileObject, targetDirectoryExtraPath, overwrite );
+            }
+            else
+            {
+               this.Download( sourceFileObject, targetDirectoryPath, overwrite );
+            }
          }
       }
 

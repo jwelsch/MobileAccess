@@ -55,13 +55,6 @@ namespace MobileAccess
          private set;
       }
 
-      //[Switch( "-wmi", Optional = true, CaseSensitive = false, Groups = new int[] { 2 }, Description = "Uses the WMI API to find the specified device." )]
-      //public bool FindWmi
-      //{
-      //   get;
-      //   private set;
-      //}
-
       //
       // Arguments for UPLOAD command.
       //

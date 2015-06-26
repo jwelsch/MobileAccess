@@ -79,7 +79,7 @@ namespace MobileAccess
                         };
                      commander.DataCopyError += ( sender, e ) =>
                         {
-                           Console.WriteLine( e.Exception.Message );
+                           Console.WriteLine( "\r" + e.Exception.Message );
                         };
 
                      Console.WriteLine();
@@ -91,7 +91,7 @@ namespace MobileAccess
                      {
                         commander.Upload( targetObject, components.Item1, arguments.Overwrite, components.Item2, arguments.Recursive );
                      }
-                     Console.WriteLine( "Completed" );
+                     Console.WriteLine( "\rCompleted                                                                     " );
                   }
                }
                else if ( arguments.CommandDownload )
@@ -124,7 +124,7 @@ namespace MobileAccess
                      };
                      commander.DataCopyError += ( sender, e ) =>
                      {
-                        Console.WriteLine( e.Exception.Message );
+                        Console.WriteLine( "\r" + e.Exception.Message );
                      };
 
                      Console.WriteLine();
@@ -136,7 +136,7 @@ namespace MobileAccess
                      {
                         commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite, components.Item2, arguments.Recursive );
                      }
-                     Console.WriteLine( "Completed" );
+                     Console.WriteLine( "\rCompleted                                                                     " );
                   }
                }
                else
