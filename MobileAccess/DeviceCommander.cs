@@ -24,7 +24,7 @@ namespace MobileAccess
          var fileInfo = new FileInfo( sourceFilePath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) == FileAttributes.Directory )
          {
-            this.Upload( containerObject, sourceFilePath, overwrite, "*", true );
+            this.Upload( containerObject, sourceFilePath, overwrite, "*", true, false );
             return;
          }
 
@@ -144,7 +144,7 @@ namespace MobileAccess
          }
       }
 
-      public void Upload( IWpdObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      public void Upload( IWpdObject containerObject, string sourceDirectoryPath, bool overwrite, string searchPattern, bool recursive, bool flatten )
       {
          var fileInfo = new FileInfo( sourceDirectoryPath );
          if ( ( fileInfo.Attributes & FileAttributes.Directory ) != FileAttributes.Directory )
@@ -191,28 +191,37 @@ namespace MobileAccess
 
          sourceDirectoryPath = sourceDirectoryPath.EnsureLastCharacter( '\\', true );
 
+         IWpdObject targetObject = null;
+
          foreach ( var sourceFilePath in sourceFilePaths )
          {
-            var slash = sourceFilePath.LastIndexOf( '\\' );
-
-            if ( slash < 0 )
+            if ( flatten )
             {
-               continue;
-            }
-
-            if ( slash != sourceDirectoryPath.Length - 1 )
-            {
-               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
-
-               var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
-               var targetObject = this.device.ObjectFromPath( targetObjectPath, true );
-
-               this.Upload( targetObject, sourceFilePath, overwrite );
+               targetObject = containerObject;
             }
             else
             {
-               this.Upload( containerObject, sourceFilePath, overwrite );
+               var slash = sourceFilePath.LastIndexOf( '\\' );
+
+               if ( slash < 0 )
+               {
+                  continue;
+               }
+
+               if ( slash != sourceDirectoryPath.Length - 1 )
+               {
+                  var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
+
+                  var targetObjectPath = containerObject.GetPath() + Path.DirectorySeparatorChar + extra;
+                  targetObject = this.device.ObjectFromPath( targetObjectPath, true );
+               }
+               else
+               {
+                  targetObject = containerObject;
+               }
             }
+
+            this.Upload( targetObject, sourceFilePath, overwrite );
          }
       }
 
@@ -328,7 +337,7 @@ namespace MobileAccess
          }
       }
 
-      public void Download( IWpdObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive )
+      public void Download( IWpdObject sourceObject, string targetDirectoryPath, bool overwrite, string searchPattern, bool recursive, bool flatten )
       {
          if ( !sourceObject.IsContainer )
          {
@@ -341,34 +350,45 @@ namespace MobileAccess
 
          sourceDirectoryPath = sourceDirectoryPath.EnsureLastCharacter( '\\', true );
 
+         string targetDirectory = null;
+
          foreach ( var sourceFilePath in sourceFilePaths )
          {
-            var slash = sourceFilePath.LastIndexOf( '\\' );
-
-            if ( slash < 0 )
-            {
-               continue;
-            }
-
             var sourceFileObject = this.device.ObjectFromPath( sourceFilePath, true );
 
-            if ( slash != sourceDirectoryPath.Length - 1 )
+            if ( flatten )
             {
-               var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
-
-               var targetDirectoryExtraPath = targetDirectoryPath + Path.DirectorySeparatorChar + extra;
-
-               if ( !Directory.Exists( targetDirectoryExtraPath ) )
-               {
-                  Directory.CreateDirectory( targetDirectoryExtraPath );
-               }
-
-               this.Download( sourceFileObject, targetDirectoryExtraPath, overwrite );
+               targetDirectory = targetDirectoryPath;
             }
             else
             {
-               this.Download( sourceFileObject, targetDirectoryPath, overwrite );
+               var slash = sourceFilePath.LastIndexOf( '\\' );
+
+               if ( slash < 0 )
+               {
+                  continue;
+               }
+
+               if ( slash != sourceDirectoryPath.Length - 1 )
+               {
+                  var extra = sourceFilePath.Substring( sourceDirectoryPath.Length, slash - sourceDirectoryPath.Length );
+
+                  var targetDirectoryExtraPath = targetDirectoryPath + Path.DirectorySeparatorChar + extra;
+
+                  if ( !Directory.Exists( targetDirectoryExtraPath ) )
+                  {
+                     Directory.CreateDirectory( targetDirectoryExtraPath );
+                  }
+
+                  targetDirectory = targetDirectoryExtraPath;
+               }
+               else
+               {
+                  targetDirectory = targetDirectoryPath;
+               }
             }
+
+            this.Download( sourceFileObject, targetDirectory, overwrite );
          }
       }
 

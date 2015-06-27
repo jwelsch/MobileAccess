@@ -83,7 +83,7 @@ namespace MobileAccess
                      }
                      else
                      {
-                        commander.Upload( targetObject, components.Item1, arguments.Overwrite, components.Item2, arguments.Recursive );
+                        commander.Upload( targetObject, components.Item1, arguments.Overwrite, components.Item2, arguments.Recursive, arguments.Flatten );
                      }
                      Console.WriteLine( "\rCompleted                                                                     " );
                   }
@@ -127,7 +127,7 @@ namespace MobileAccess
                      }
                      else
                      {
-                        commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite, components.Item2, arguments.Recursive );
+                        commander.Download( sourceObject, arguments.DownloadTargetPath, arguments.Overwrite, components.Item2, arguments.Recursive, arguments.Flatten );
                      }
                      Console.WriteLine( "\rCompleted                                                                     " );
                   }

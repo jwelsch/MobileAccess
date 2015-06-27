@@ -30,7 +30,7 @@ namespace MobileAccess
          private set;
       }
 
-      [Switch( "Download", Ordinal = 2, Optional = true, Groups = new int[] { 4 }, CaseSensitive = false, Description = "Downloads files from the device." )]
+      [Switch( "Download", Ordinal = 1, Optional = true, Groups = new int[] { 4 }, CaseSensitive = false, Description = "Downloads files from the device." )]
       public bool CommandDownload
       {
          get;
@@ -132,6 +132,13 @@ namespace MobileAccess
 
       [Switch( "-recursive", Optional = true, CaseSensitive = false, Groups = new int[] { 3, 4 }, Description = "Include to recurse through sub directories." )]
       public bool Recursive
+      {
+         get;
+         private set;
+      }
+
+      [Switch( "-flatten", Optional = true, CaseSensitive = false, Groups = new int[] { 3, 4 }, Description = "Include to flatten the directory structure when uploading or downloading." )]
+      public bool Flatten
       {
          get;
          private set;
