@@ -41,7 +41,7 @@ namespace MobileAccess
                         ClipboardApi.Copy( device.DeviceID, true );
                      }
 
-                     device.DisplayProperties();
+                     device.DisplayProperties( new ConsoleWriter() );
                   }
                }
                else if ( arguments.CommandUpload )

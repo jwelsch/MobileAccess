@@ -4,7 +4,7 @@ using PortableDeviceApiLib;
 
 namespace MobileAccess
 {
-   public enum VariantType : short
+   public enum VariantType : ushort
    {
       //
       // https://msdn.microsoft.com/en-us/library/windows/desktop/aa380072(v=vs.85).aspx
@@ -52,181 +52,397 @@ namespace MobileAccess
       VT_TYPEMASK = 0xFFF
    }
 
-   [StructLayout( LayoutKind.Explicit, Size = 16 )]
-   public struct PropVariant
+   public class PropVariant
    {
-      [FieldOffset( 0 )]
-      public VariantType variantType;
-      [FieldOffset( 8 )]
-      public IntPtr pointerValue;
-      [FieldOffset( 8 )]
-      public byte byteValue;
-      [FieldOffset( 8 )]
-      public sbyte sbyteValue;
-      [FieldOffset( 8 )]
-      public short shortValue;
-      [FieldOffset( 8 )]
-      public ushort ushortValue;
-      [FieldOffset( 8 )]
-      public int intValue;
-      [FieldOffset( 8 )]
-      public uint uintValue;
-      [FieldOffset( 8 )]
-      public long longValue;
-      [FieldOffset( 8 )]
-      public ulong ulongValue;
-      [FieldOffset( 8 )]
-      public double dateValue;
-      [FieldOffset( 8 )]
-      public double doubleValue;
-      [FieldOffset( 8 )]
-      public float floatValue;
-      [FieldOffset( 8 )]
-      public sbyte boolValue;
-
-      public DateTime ToDateTime()
+      [StructLayout( LayoutKind.Explicit, Size = 16 )]
+      private struct PROPVARIANT
       {
-         if ( this.variantType != VariantType.VT_DATE )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
-
-         return DateTime.FromOADate( this.dateValue );
+         [FieldOffset( 0 )]
+         public VariantType variantType;
+         #region Reserved
+         [FieldOffset( 2 )]
+         public ushort reserved1;
+         [FieldOffset( 4 )]
+         public ushort reserved2;
+         [FieldOffset( 6 )]
+         public ushort reserved3;
+         #endregion
+         [FieldOffset( 8 )]
+         public IntPtr pointerValue;
+         [FieldOffset( 8 )]
+         public byte byteValue;
+         [FieldOffset( 8 )]
+         public sbyte sbyteValue;
+         [FieldOffset( 8 )]
+         public short shortValue;
+         [FieldOffset( 8 )]
+         public ushort ushortValue;
+         [FieldOffset( 8 )]
+         public int intValue;
+         [FieldOffset( 8 )]
+         public uint uintValue;
+         [FieldOffset( 8 )]
+         public long longValue;
+         [FieldOffset( 8 )]
+         public ulong ulongValue;
+         [FieldOffset( 8 )]
+         public DateTime dateValue;
+         [FieldOffset( 8 )]
+         public double doubleValue;
+         [FieldOffset( 8 )]
+         public float floatValue;
+         [FieldOffset( 8 )]
+         public int boolValue;
+         [FieldOffset( 8 )]
+         public Guid clsidValue;
+         [FieldOffset( 8 )]
+         public string stringValue;
       }
 
-      public void FromDateTime( DateTime dt )
-      {
-         if ( this.variantType != VariantType.VT_DATE )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+      private PROPVARIANT value;
 
-         this.dateValue = dt.ToOADate();
+      public PropVariant( IPortableDeviceContent content, string objectID, _tagpropertykey key )
+      {
+         IPortableDeviceProperties properties;
+         content.Properties( out properties );
+
+         IPortableDeviceValues values;
+         properties.GetValues( objectID, null, out values );
+
+         this.LoadData( values, key );
       }
 
-      public byte ToByte()
+      public PropVariant( IPortableDeviceValues values, _tagpropertykey key )
       {
-         if ( this.variantType != VariantType.VT_UI1 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
-
-         return this.byteValue;
+         this.LoadData( values, key );
       }
 
-      public sbyte ToSByte()
+      private void LoadData( IPortableDeviceValues values, _tagpropertykey key )
       {
-         if ( this.variantType != VariantType.VT_I1 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         tag_inner_PROPVARIANT ipValue;
+         values.GetValue( ref key, out ipValue );
 
-         return this.sbyteValue;
+         // Allocate memory for the intermediate marshalled object and marshal it as a pointer
+         var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
+
+         try
+         {
+            Marshal.StructureToPtr( ipValue, ptrValue, false );
+
+            // Marshal the pointer into our C# object
+            var pv = MarshalToStructure<PROPVARIANT>( ptrValue );
+
+            switch ( (VariantType) ipValue.vt )
+            {
+               case VariantType.VT_LPWSTR:
+               {
+                  this.value.stringValue = Marshal.PtrToStringUni( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_LPSTR:
+               {
+                  this.value.stringValue = Marshal.PtrToStringAnsi( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_BSTR:
+               {
+                  this.value.stringValue = Marshal.PtrToStringBSTR( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_BOOL:
+               {
+                  values.GetBoolValue( key, out this.value.boolValue );
+                  break;
+               }
+               case VariantType.VT_DATE:
+               {
+                  this.value.dateValue = DateTime.FromOADate( MarshalToStructure<Double>( pv.pointerValue ) );
+                  break;
+               }
+               case VariantType.VT_R4:
+               {
+                  values.GetFloatValue( key, out this.value.floatValue );
+                  break;
+               }
+               case VariantType.VT_R8:
+               {
+                  this.value.doubleValue = MarshalToStructure<Double>( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_UI1:
+               {
+                  this.value.byteValue = MarshalToStructure<Byte>( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_I1:
+               {
+                  this.value.sbyteValue = MarshalToStructure<SByte>( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_UI2:
+               {
+                  this.value.ushortValue = MarshalToStructure<UInt16>( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_I2:
+               {
+                  this.value.shortValue = MarshalToStructure<Int16>( pv.pointerValue );
+                  break;
+               }
+               case VariantType.VT_UI4:
+               {
+                  values.GetUnsignedIntegerValue( key, out this.value.uintValue );
+                  break;
+               }
+               case VariantType.VT_I4:
+               {
+                  values.GetSignedIntegerValue( key, out this.value.intValue );
+                  break;
+               }
+               case VariantType.VT_UI8:
+               {
+                  values.GetUnsignedLargeIntegerValue( key, out this.value.ulongValue );
+                  break;
+               }
+               case VariantType.VT_I8:
+               {
+                  values.GetSignedLargeIntegerValue( key, out this.value.longValue );
+                  break;
+               }
+               case VariantType.VT_CLSID:
+               {
+                  values.GetGuidValue( key, out this.value.clsidValue );
+                  break;
+               }
+            }
+         }
+         finally
+         {
+            Marshal.FreeHGlobal( ptrValue );
+         }
       }
 
-      public short ToShort()
+      private static T MarshalToStructure<T>( IntPtr data ) where T : struct
       {
-         if ( this.variantType != VariantType.VT_I2 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
-
-         return this.shortValue;
+         return (T) Marshal.PtrToStructure( data, typeof( T ) );
       }
 
-      public ushort ToUShort()
+      public DateTime AsDateTime()
       {
-         if ( this.variantType != VariantType.VT_UI2 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value. != VariantType.VT_DATE )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.ushortValue;
+         return this.value.dateValue;
       }
 
-      public int ToInt()
+      public byte AsByte()
       {
-         if ( this.variantType != VariantType.VT_I4 && this.variantType != VariantType.VT_INT )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_UI1 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.intValue;
+         return this.value.byteValue;
       }
 
-      public uint ToUInt32()
+      public sbyte AsSByte()
       {
-         if ( this.variantType != VariantType.VT_UI4 && this.variantType != VariantType.VT_UINT )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_I1 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.uintValue;
+         return this.value.sbyteValue;
       }
 
-      public long ToLong()
+      public short AsShort()
       {
-         if ( this.variantType != VariantType.VT_I8 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_I2 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.longValue;
+         return this.value.shortValue;
       }
 
-      public float ToFloat()
+      public ushort AsUShort()
       {
-         if ( this.variantType != VariantType.VT_R4 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_UI2 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.floatValue;
+         return this.value.ushortValue;
       }
 
-      public double ToDouble()
+      public int AsInt()
       {
-         if ( this.variantType != VariantType.VT_R8 )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_I4 && this.value.variantType != VariantType.VT_INT )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         return this.doubleValue;
+         return this.value.intValue;
       }
 
-      public bool ToBool()
+      public uint AsUInt()
       {
-         if ( this.variantType != VariantType.VT_BOOL )
-         {
-            throw new InvalidOperationException( "Cannot be converted to type." );
-         }
+         //if ( this.value.variantType != VariantType.VT_UI4 && this.value.variantType != VariantType.VT_UINT )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
 
-         if ( this.boolValue == 0 )
+         return this.value.uintValue;
+      }
+
+      public long AsLong()
+      {
+         //if ( this.value.variantType != VariantType.VT_I8 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
+
+         return this.value.longValue;
+      }
+
+      public float AsFloat()
+      {
+         //if ( this.value.variantType != VariantType.VT_R4 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
+
+         return this.value.floatValue;
+      }
+
+      public double AsDouble()
+      {
+         //if ( this.value.variantType != VariantType.VT_R8 )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
+
+         return this.value.doubleValue;
+      }
+
+      public bool AsBool()
+      {
+         //if ( this.value.variantType != VariantType.VT_BOOL )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
+
+         if ( this.value.boolValue == 0 )
          {
             return false;
          }
-         else if ( this.boolValue == -1 )
+         else if ( this.value.boolValue == -1 )
          {
             return true;
          }
 
-         throw new FormatException( String.Format( "Boolean value was \"{0}\".", this.boolValue ) );
+         throw new FormatException( String.Format( "Boolean value was \"{0}\".", this.value.boolValue ) );
       }
 
-      public static tag_inner_PROPVARIANT MarshalTo( PropVariant propVariant )
+      public Guid AsClsid()
       {
-         var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( propVariant ) );
-         Marshal.StructureToPtr( propVariant, ptrValue, false );
-         return (tag_inner_PROPVARIANT) Marshal.PtrToStructure( ptrValue, typeof( tag_inner_PROPVARIANT ) );
+         //if ( this.value.variantType != VariantType.VT_CLSID )
+         //{
+         //   throw new InvalidOperationException( "Cannot be converted to type." );
+         //}
+
+         //this.value.clsidValue = (Guid) Marshal.PtrToStructure( this.value.pointerValue, typeof( Guid ) );
+
+         return this.value.clsidValue;
       }
 
-      public static PropVariant MarshalFrom( tag_inner_PROPVARIANT propVariant )
+      public override string ToString()
       {
-         var ipValue = new tag_inner_PROPVARIANT();
-         var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
-         Marshal.StructureToPtr( ipValue, ptrValue, false );
-         return (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
+         return base.ToString();
+         //switch ( this.variantType )
+         //{
+         //   case VariantType.VT_LPWSTR:
+         //   {
+         //      return Marshal.PtrToStringUni( this.pointerValue );
+         //   }
+         //   case VariantType.VT_LPSTR:
+         //   {
+         //      return Marshal.PtrToStringAnsi( this.pointerValue );
+         //   }
+         //   case VariantType.VT_BSTR:
+         //   {
+         //      return Marshal.PtrToStringBSTR( this.pointerValue );
+         //   }
+         //   case VariantType.VT_BOOL:
+         //   {
+         //      return this.ToBool().ToString();
+         //   }
+         //   case VariantType.VT_DATE:
+         //   {
+         //      return this.ToDateTime().ToString();
+         //   }
+         //   case VariantType.VT_R4:
+         //   {
+         //      return this.floatValue.ToString();
+         //   }
+         //   case VariantType.VT_R8:
+         //   {
+         //      return this.doubleValue.ToString();
+         //   }
+         //   case VariantType.VT_UI1:
+         //   {
+         //      return this.byteValue.ToString();
+         //   }
+         //   case VariantType.VT_I1:
+         //   {
+         //      return this.sbyteValue.ToString();
+         //   }
+         //   case VariantType.VT_UI2:
+         //   {
+         //      return this.ushortValue.ToString();
+         //   }
+         //   case VariantType.VT_I2:
+         //   {
+         //      return this.shortValue.ToString();
+         //   }
+         //   case VariantType.VT_UI4:
+         //   {
+         //      return this.uintValue.ToString();
+         //   }
+         //   case VariantType.VT_I4:
+         //   {
+         //      return this.intValue.ToString();
+         //   }
+         //   case VariantType.VT_UI8:
+         //   {
+         //      return this.longValue.ToString();
+         //   }
+         //   case VariantType.VT_I8:
+         //   {
+         //      return this.ulongValue.ToString();
+         //   }
+         //}
+
+         //return this.pointerValue.ToString();
       }
+
+      //public static tag_inner_PROPVARIANT MarshalTo( PropVariant propVariant )
+      //{
+      //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( propVariant ) );
+      //   Marshal.StructureToPtr( propVariant, ptrValue, false );
+      //   return (tag_inner_PROPVARIANT) Marshal.PtrToStructure( ptrValue, typeof( tag_inner_PROPVARIANT ) );
+      //}
+
+      //public static PropVariant MarshalFrom( tag_inner_PROPVARIANT propVariant )
+      //{
+      //   var ipValue = new tag_inner_PROPVARIANT();
+      //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
+      //   Marshal.StructureToPtr( ipValue, ptrValue, false );
+      //   return (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
+      //}
+
       public static tag_inner_PROPVARIANT StringToPropVariant( string value )
       {
          // We'll use an IPortableDeviceValues object to transform the

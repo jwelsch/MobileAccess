@@ -56,8 +56,10 @@
   <ItemGroup>
     <Compile Include="CLArguments.cs" />
     <Compile Include="ClipboardApi.cs" />
+    <Compile Include="ConsoleWriter.cs" />
     <Compile Include="DataCopied.cs" />
     <Compile Include="DeviceCommander.cs" />
+    <Compile Include="IMessageWriter.cs" />
     <Compile Include="IWpdDevice.cs" />
     <Compile Include="IWpdObject.cs" />
     <Compile Include="PortableDeviceConstants.cs" />

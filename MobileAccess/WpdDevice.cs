@@ -90,62 +90,72 @@ namespace MobileAccess
          return device;
       }
 
-      public void DisplayProperties()
+      public void DisplayProperties( IMessageWriter writer )
       {
-         //
-         // Retrieve IPortableDeviceProperties interface required
-         // to get all the properties
-         //
-         IPortableDeviceProperties pProperties;
-         this.Content.Properties( out pProperties );
+         ////
+         //// Retrieve IPortableDeviceProperties interface required
+         //// to get all the properties
+         ////
+         //IPortableDeviceProperties pProperties;
+         //this.Content.Properties( out pProperties );
 
-         //
-         // Call the GetValues API, we specify null to indicate we
-         // want to retrieve all properties
-         //
-         IPortableDeviceValues pPropValues;
-         pProperties.GetValues( this.ObjectID, null, out pPropValues );
+         ////
+         //// Call the GetValues API, we specify null to indicate we
+         //// want to retrieve all properties
+         ////
+         //IPortableDeviceValues pPropValues;
+         //pProperties.GetValues( this.ObjectID, null, out pPropValues );
 
-         //
-         // Get count of properties
-         //
-         var cPropValues = 0U;
-         pPropValues.GetCount( ref cPropValues );
-         Console.WriteLine( "Received " + cPropValues.ToString() + " properties" );
+         ////
+         //// Get count of properties
+         ////
+         //var cPropValues = 0U;
+         //pPropValues.GetCount( ref cPropValues );
+         //Console.WriteLine( "Received " + cPropValues.ToString() + " properties" );
 
-         for ( var i = 0U; i < cPropValues; i++ )
-         {
-            //
-            // Retrieve the property at index 'i'
-            //
-            var propKey = new PortableDeviceApiLib._tagpropertykey();
-            var ipValue = new PortableDeviceApiLib.tag_inner_PROPVARIANT();
-            pPropValues.GetAt( i, ref propKey, ref ipValue );
+         //for ( var i = 0U; i < cPropValues; i++ )
+         //{
+         //   //
+         //   // Retrieve the property at index 'i'
+         //   //
+         //   var propKey = new PortableDeviceApiLib._tagpropertykey();
+         //   var ipValue = new PortableDeviceApiLib.tag_inner_PROPVARIANT();
+         //   pPropValues.GetAt( i, ref propKey, ref ipValue );
 
-            //
-            // Allocate memory for the intermediate marshalled object
-            // and marshal it as a pointer
-            //
-            var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
-            Marshal.StructureToPtr( ipValue, ptrValue, false );
+         //   //
+         //   // Allocate memory for the intermediate marshalled object
+         //   // and marshal it as a pointer
+         //   //
+         //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
 
-            //
-            // Marshal the pointer into our C# object
-            //
-            var pvValue = (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
+         //   try
+         //   {
+         //      Marshal.StructureToPtr( ipValue, ptrValue, false );
 
-            //
-            // Display the property if it a string (VT_LPWSTR is decimal 31)
-            //
-            if ( pvValue.variantType == VariantType.VT_LPWSTR )
-            {
-               Console.WriteLine( "{0}: Value is \"{1}\"", ( i + 1 ).ToString(), Marshal.PtrToStringUni( pvValue.pointerValue ) );
-            }
-            else
-            {
-               Console.WriteLine( "{0}: Vartype is {1}", ( i + 1 ).ToString(), pvValue.variantType.ToString() );
-            }
-         }
+         //      //
+         //      // Marshal the pointer into our C# object
+         //      //
+         //      var pvValue = (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
+
+         //      //
+         //      // Display the property if it a string (VT_LPWSTR is decimal 31)
+         //      //
+         //      //if ( pvValue.variantType == VariantType.VT_LPWSTR )
+         //      //{
+         //      //   writer.WriteLine( "{0}: Value is \"{1}\"", ( i + 1 ).ToString(), Marshal.PtrToStringUni( pvValue.pointerValue ) );
+         //      //}
+         //      //else
+         //      //{
+         //      //   writer.WriteLine( "{0}: Vartype is {1}", ( i + 1 ).ToString(), pvValue.variantType.ToString() );
+         //      //}
+
+         //      //writer.WriteLine( "[{0}] {1} ({2}) {3}", i, PortableDevicePKeys.FindKeyName( propKey ), pvValue.variantType, pvValue );
+         //   }
+         //   finally
+         //   {
+         //      Marshal.FreeHGlobal( ptrValue );
+         //   }
+         //}
       }
 
       private void Enumerate( ref IPortableDeviceContent pContent, string parentID, string indent )

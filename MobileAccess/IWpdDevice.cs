@@ -14,7 +14,7 @@ namespace MobileAccess
          get;
       }
 
-      void DisplayProperties();
+      void DisplayProperties( IMessageWriter writer );
       void StartEnumerate();
       IWpdObject[] GetChildren();
       IWpdObject ObjectFromPath( string path, bool createPath );
