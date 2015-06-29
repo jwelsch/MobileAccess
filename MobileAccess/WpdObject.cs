@@ -25,46 +25,28 @@ namespace MobileAccess
          private set;
       }
 
-      private string name;
       public string Name
       {
-         get
-         {
-            if ( this.name == null )
-            {
-               var property = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_NAME );
-               this.name = property.Value;
-            }
-
-            return this.name;
-         }
+         get;
+         private set;
       }
 
-      private string originalFileName;
       public string OriginalFileName
       {
-         get
-         {
-            if ( this.originalFileName == null )
-            {
-               var property = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME );
-               this.originalFileName = property.Value;
-            }
-
-            return this.originalFileName;
-         }
+         get;
+         private set;
       }
 
-      private bool isContainer;
       public bool IsContainer
       {
-         get { return this.isContainer; }
+         get;
+         private set;
       }
 
-      private ulong size;
       public ulong Size
       {
-         get { return this.size; }
+         get;
+         private set;
       }
 
       public WpdPropertyCollection Properties
@@ -81,50 +63,17 @@ namespace MobileAccess
          this.Properties = new WpdPropertyCollection( this.Content, this.ObjectID );
          this.Properties.Refresh();
 
-         IPortableDeviceProperties properties = null;
-         this.Content.Properties( out properties );
+         var name = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_NAME, false );
+         this.Name = name == null ? string.Empty : name.Value;
 
-         PortableDeviceApiLib.IPortableDeviceValues values = null;
-         properties.GetValues( this.ObjectID, null, out values );
+         var originalFileName = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME, false );
+         this.OriginalFileName = originalFileName == null ? string.Empty : originalFileName.Value;
 
-         var property = PortableDevicePKeys.WPD_OBJECT_CONTENT_TYPE;
-         Guid value;
-         values.GetGuidValue( ref property, out value );
-         this.isContainer = value == PortableDeviceGuids.WPD_CONTENT_TYPE_FOLDER;
+         var size = this.Properties.Find<ulong>( PortableDevicePKeys.WPD_OBJECT_SIZE, false );
+         this.Size = size == null ? 0UL : size.Value;
 
-         IPortableDeviceKeyCollection keys;
-         properties.GetSupportedProperties( this.ObjectID, out keys );
-         var count = 0U;
-         keys.GetCount( ref count );
-         var propertiesRead = 0;
-         var maxProperties = this.IsContainer ? 2 : 3;
-
-         for ( var i = 0U; i < count && propertiesRead < maxProperties; i++ )
-         {
-            _tagpropertykey key = new _tagpropertykey();
-            keys.GetAt( i, ref key );
-
-            property = PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME;
-            if ( PortableDevicePKeys.Equals( key, property ) )
-            {
-               values.GetStringValue( ref property, out this.originalFileName );
-               propertiesRead++;
-            }
-
-            property = PortableDevicePKeys.WPD_OBJECT_NAME;
-            if ( PortableDevicePKeys.Equals( key, property ) )
-            {
-               values.GetStringValue( ref property, out this.name );
-               propertiesRead++;
-            }
-
-            property = PortableDevicePKeys.WPD_OBJECT_SIZE;
-            if ( PortableDevicePKeys.Equals( key, property ) )
-            {
-               values.GetUnsignedLargeIntegerValue( ref property, out this.size );
-               propertiesRead++;
-            }
-         }
+         var value = this.Properties.Find<Guid>( PortableDevicePKeys.WPD_OBJECT_CONTENT_TYPE, false );
+         this.IsContainer = value == null ? false : value.Value == PortableDeviceGuids.WPD_CONTENT_TYPE_FOLDER;
       }
 
       public IWpdObject[] GetChildren()
@@ -151,7 +100,7 @@ namespace MobileAccess
 
       public string GetPath()
       {
-         var name = this.OriginalFileName == null ? this.Name : this.OriginalFileName;
+         var name = String.IsNullOrEmpty( this.OriginalFileName ) ? this.Name : this.OriginalFileName;
 
          if ( this.Parent == null )
          {
@@ -211,26 +160,9 @@ namespace MobileAccess
 
       public void DumpProperties()
       {
-         IPortableDeviceProperties properties;
-         this.Content.Properties( out properties );
-
-         IPortableDeviceKeyCollection keys;
-         IPortableDeviceValues values;
-         var count = 0U;
-
-         properties.GetSupportedProperties( this.ObjectID, out keys );
-         properties.GetValues( this.ObjectID, keys, out values );
-
-         values.GetCount( ref count );
-
-         for ( var i = 0U; i < count; i++ )
+         for ( var i = 0; i < this.Properties.Count; i++ )
          {
-            _tagpropertykey key = new _tagpropertykey();
-            tag_inner_PROPVARIANT variant = new tag_inner_PROPVARIANT();
-
-            values.GetAt( i, ref key, ref variant );
-
-            var output = String.Format( "[{0}] {1}", i, PortableDevicePKeys.FindKeyName( key ) );
+            var output = String.Format( "{0} {1} ({2}): {3}", i.ToString( "D" + this.Properties.Count.CountDigits().ToString() ), PortableDevicePKeys.FindKeyName( this.Properties[i].Key ), this.Properties[i].Type, this.Properties[i].Value );
             System.Diagnostics.Trace.WriteLine( output );
             Console.WriteLine( output );
          }
