@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace MobileAccess
 {
@@ -10,19 +11,19 @@ namespace MobileAccess
    {
       private PortableDeviceClass device = null;
 
-      private WpdDevice()
-      {
-      }
-
-      ~WpdDevice()
-      {
-         this.CleanUp();
-      }
-
       private string name;
       public string Name
       {
-         get { return this.name; }
+         get
+         {
+            if ( this.name == null )
+            {
+               var property = this.Properties.Find<string>( PortableDevicePKeys.WPD_DEVICE_FRIENDLY_NAME );
+               this.name = property.Value;
+            }
+
+            return this.name;
+         }
       }
 
       public string OriginalFileName
@@ -62,100 +63,32 @@ namespace MobileAccess
          private set;
       }
 
+      public WpdPropertyCollection Properties
+      {
+         get;
+         private set;
+      }
+
+      public WpdDevice( string deviceId )
+      {
+         var clientInfo = new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         this.device = new PortableDeviceClass();
+         this.device.Open( deviceId, (IPortableDeviceValues) clientInfo );
+         this.DeviceID = deviceId;
+         this.device.Content( out this.content );
+
+         this.Properties = new WpdPropertyCollection( this.Content, this.ObjectID );
+         this.Properties.Refresh();
+      }
+
+      ~WpdDevice()
+      {
+         this.CleanUp();
+      }
+
       public string[] GetChildPaths( string searchPattern, bool recursive )
       {
          throw new NotImplementedException();
-      }
-
-      public static WpdDevice Create( string deviceId )
-      {
-         var clientInfo = new PortableDeviceTypesLib.PortableDeviceValuesClass();
-         var device = new WpdDevice();
-         device.device = new PortableDeviceClass();
-         device.device.Open( deviceId, (IPortableDeviceValues) clientInfo );
-         device.DeviceID = deviceId;
-         device.device.Content( out device.content );
-
-         IPortableDeviceContent content = null;
-         IPortableDeviceProperties properties = null;
-         device.device.Content( out content );
-         content.Properties( out properties );
-
-         IPortableDeviceValues values = null;
-         properties.GetValues( device.ObjectID, null, out values );
-
-         var property = PortableDevicePKeys.WPD_DEVICE_FRIENDLY_NAME;
-         values.GetStringValue( ref property, out device.name );
-
-         return device;
-      }
-
-      public void DisplayProperties( IMessageWriter writer )
-      {
-         ////
-         //// Retrieve IPortableDeviceProperties interface required
-         //// to get all the properties
-         ////
-         //IPortableDeviceProperties pProperties;
-         //this.Content.Properties( out pProperties );
-
-         ////
-         //// Call the GetValues API, we specify null to indicate we
-         //// want to retrieve all properties
-         ////
-         //IPortableDeviceValues pPropValues;
-         //pProperties.GetValues( this.ObjectID, null, out pPropValues );
-
-         ////
-         //// Get count of properties
-         ////
-         //var cPropValues = 0U;
-         //pPropValues.GetCount( ref cPropValues );
-         //Console.WriteLine( "Received " + cPropValues.ToString() + " properties" );
-
-         //for ( var i = 0U; i < cPropValues; i++ )
-         //{
-         //   //
-         //   // Retrieve the property at index 'i'
-         //   //
-         //   var propKey = new PortableDeviceApiLib._tagpropertykey();
-         //   var ipValue = new PortableDeviceApiLib.tag_inner_PROPVARIANT();
-         //   pPropValues.GetAt( i, ref propKey, ref ipValue );
-
-         //   //
-         //   // Allocate memory for the intermediate marshalled object
-         //   // and marshal it as a pointer
-         //   //
-         //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
-
-         //   try
-         //   {
-         //      Marshal.StructureToPtr( ipValue, ptrValue, false );
-
-         //      //
-         //      // Marshal the pointer into our C# object
-         //      //
-         //      var pvValue = (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
-
-         //      //
-         //      // Display the property if it a string (VT_LPWSTR is decimal 31)
-         //      //
-         //      //if ( pvValue.variantType == VariantType.VT_LPWSTR )
-         //      //{
-         //      //   writer.WriteLine( "{0}: Value is \"{1}\"", ( i + 1 ).ToString(), Marshal.PtrToStringUni( pvValue.pointerValue ) );
-         //      //}
-         //      //else
-         //      //{
-         //      //   writer.WriteLine( "{0}: Vartype is {1}", ( i + 1 ).ToString(), pvValue.variantType.ToString() );
-         //      //}
-
-         //      //writer.WriteLine( "[{0}] {1} ({2}) {3}", i, PortableDevicePKeys.FindKeyName( propKey ), pvValue.variantType, pvValue );
-         //   }
-         //   finally
-         //   {
-         //      Marshal.FreeHGlobal( ptrValue );
-         //   }
-         //}
       }
 
       private void Enumerate( ref IPortableDeviceContent pContent, string parentID, string indent )

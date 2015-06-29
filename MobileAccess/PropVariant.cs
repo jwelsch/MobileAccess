@@ -1,465 +1,610 @@
-﻿using System;
+﻿using PortableDeviceApiLib;
+using System;
 using System.Runtime.InteropServices;
-using PortableDeviceApiLib;
 
 namespace MobileAccess
 {
-   public enum VariantType : ushort
+   [StructLayout( LayoutKind.Sequential )]
+   public struct PROPVARIANT
    {
-      //
-      // https://msdn.microsoft.com/en-us/library/windows/desktop/aa380072(v=vs.85).aspx
-      //
+      public ushort vt;
+      public ushort wReserved1;
+      public ushort wReserved2;
+      public ushort wReserved3;
+      public IntPtr p;
+      public int p2;
 
-      VT_EMPTY = 0,
-      VT_NULL = 1,
-      VT_I1 = 16, // 1-byte signed integer.
-      VT_UI1 = 17, // 1-byte unsigned integer.
-      VT_I2 = 2, // 2-byte signed integer.
-      VT_UI2 = 18, // 2-byte unsigned integer.
-      VT_I4 = 3, // 4-byte signed integer.
-      VT_UI4 = 19, // 4-byte unsigned integer.
-      VT_INT = 22, // 4-byte signed integer.
-      VT_UINT = 23, // 4-byte unsigned integer.
-      VT_I8 = 20, // 8-byte signed integer.
-      VT_UI8 = 21, // 8-byte unsigned integer.
-      VT_R4 = 4, // 32-bit IEEE floating point value.
-      VT_R8 = 5, // 64-bit IEEE floating point value.
-      VT_BOOL = 11, // Boolean value (0 = FALSE, -1 = TRUE).
-      VT_ERROR = 10, // DWORD that contains a status code.
-      VT_CY = 6, // 8-byte two's compliment integer scaled by 10,000.
-      VT_DATE = 7, // 64-bit floating point number representing days since 12/31/1899.
-      VT_FILETIME = 64, // 64-bit FILETIME structure.
-      VT_CLSID = 72, // Pointer to a GUID.
-      VT_CF = 71, // Pointer to CLIPDATA structure.
-      VT_BSTR = 8, // Pointer to NULL-terminated Unicode string.
-      VT_BSTR_BLOB = 0xFFF, // For system use only.
-      VT_BLOB = 65,
-      VT_BLOBOBJECT = 70,
-      VT_LPSTR = 30, // Pointer to NULL-terminated ANSI string.
-      VT_LPWSTR = 31, // Pointer to a NULL-terminated Unicode string.
-      VT_UNKNOWN = 13,
-      VT_DISPATCH = 9,
-      VT_STREAM = 66,
-      VT_STREAMED_OBJECT = 68,
-      VT_STORAGE = 67,
-      VT_STORED_OBJECT = 69,
-      VT_VERSIONED_STREAM = 73,
-      VT_DECIMAL = 14,
-      VT_VECTOR = 0x1000,
-      VT_ARRAY = 0x2000,
-      VT_BYREF = 0x4000,
-      VT_VARIANT = 12,
-      VT_TYPEMASK = 0xFFF
-   }
-
-   public class PropVariant
-   {
-      [StructLayout( LayoutKind.Explicit, Size = 16 )]
-      private struct PROPVARIANT
+      public byte[] GetDataBytes()
       {
-         [FieldOffset( 0 )]
-         public VariantType variantType;
-         #region Reserved
-         [FieldOffset( 2 )]
-         public ushort reserved1;
-         [FieldOffset( 4 )]
-         public ushort reserved2;
-         [FieldOffset( 6 )]
-         public ushort reserved3;
-         #endregion
-         [FieldOffset( 8 )]
-         public IntPtr pointerValue;
-         [FieldOffset( 8 )]
-         public byte byteValue;
-         [FieldOffset( 8 )]
-         public sbyte sbyteValue;
-         [FieldOffset( 8 )]
-         public short shortValue;
-         [FieldOffset( 8 )]
-         public ushort ushortValue;
-         [FieldOffset( 8 )]
-         public int intValue;
-         [FieldOffset( 8 )]
-         public uint uintValue;
-         [FieldOffset( 8 )]
-         public long longValue;
-         [FieldOffset( 8 )]
-         public ulong ulongValue;
-         [FieldOffset( 8 )]
-         public DateTime dateValue;
-         [FieldOffset( 8 )]
-         public double doubleValue;
-         [FieldOffset( 8 )]
-         public float floatValue;
-         [FieldOffset( 8 )]
-         public int boolValue;
-         [FieldOffset( 8 )]
-         public Guid clsidValue;
-         [FieldOffset( 8 )]
-         public string stringValue;
-      }
+         var ret = new byte[IntPtr.Size + sizeof( int )];
 
-      private PROPVARIANT value;
-
-      public PropVariant( IPortableDeviceContent content, string objectID, _tagpropertykey key )
-      {
-         IPortableDeviceProperties properties;
-         content.Properties( out properties );
-
-         IPortableDeviceValues values;
-         properties.GetValues( objectID, null, out values );
-
-         this.LoadData( values, key );
-      }
-
-      public PropVariant( IPortableDeviceValues values, _tagpropertykey key )
-      {
-         this.LoadData( values, key );
-      }
-
-      private void LoadData( IPortableDeviceValues values, _tagpropertykey key )
-      {
-         tag_inner_PROPVARIANT ipValue;
-         values.GetValue( ref key, out ipValue );
-
-         // Allocate memory for the intermediate marshalled object and marshal it as a pointer
-         var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
-
-         try
+         if ( IntPtr.Size == 4 )
          {
-            Marshal.StructureToPtr( ipValue, ptrValue, false );
-
-            // Marshal the pointer into our C# object
-            var pv = MarshalToStructure<PROPVARIANT>( ptrValue );
-
-            switch ( (VariantType) ipValue.vt )
-            {
-               case VariantType.VT_LPWSTR:
-               {
-                  this.value.stringValue = Marshal.PtrToStringUni( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_LPSTR:
-               {
-                  this.value.stringValue = Marshal.PtrToStringAnsi( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_BSTR:
-               {
-                  this.value.stringValue = Marshal.PtrToStringBSTR( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_BOOL:
-               {
-                  values.GetBoolValue( key, out this.value.boolValue );
-                  break;
-               }
-               case VariantType.VT_DATE:
-               {
-                  this.value.dateValue = DateTime.FromOADate( MarshalToStructure<Double>( pv.pointerValue ) );
-                  break;
-               }
-               case VariantType.VT_R4:
-               {
-                  values.GetFloatValue( key, out this.value.floatValue );
-                  break;
-               }
-               case VariantType.VT_R8:
-               {
-                  this.value.doubleValue = MarshalToStructure<Double>( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_UI1:
-               {
-                  this.value.byteValue = MarshalToStructure<Byte>( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_I1:
-               {
-                  this.value.sbyteValue = MarshalToStructure<SByte>( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_UI2:
-               {
-                  this.value.ushortValue = MarshalToStructure<UInt16>( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_I2:
-               {
-                  this.value.shortValue = MarshalToStructure<Int16>( pv.pointerValue );
-                  break;
-               }
-               case VariantType.VT_UI4:
-               {
-                  values.GetUnsignedIntegerValue( key, out this.value.uintValue );
-                  break;
-               }
-               case VariantType.VT_I4:
-               {
-                  values.GetSignedIntegerValue( key, out this.value.intValue );
-                  break;
-               }
-               case VariantType.VT_UI8:
-               {
-                  values.GetUnsignedLargeIntegerValue( key, out this.value.ulongValue );
-                  break;
-               }
-               case VariantType.VT_I8:
-               {
-                  values.GetSignedLargeIntegerValue( key, out this.value.longValue );
-                  break;
-               }
-               case VariantType.VT_CLSID:
-               {
-                  values.GetGuidValue( key, out this.value.clsidValue );
-                  break;
-               }
-            }
+            BitConverter.GetBytes( this.p.ToInt32() ).CopyTo( ret, 0 );
          }
-         finally
+         else if ( IntPtr.Size == 8 )
          {
-            Marshal.FreeHGlobal( ptrValue );
+            BitConverter.GetBytes( this.p.ToInt64() ).CopyTo( ret, 0 );
          }
-      }
 
-      private static T MarshalToStructure<T>( IntPtr data ) where T : struct
-      {
-         return (T) Marshal.PtrToStructure( data, typeof( T ) );
-      }
+         BitConverter.GetBytes( this.p2 ).CopyTo( ret, IntPtr.Size );
 
-      public DateTime AsDateTime()
-      {
-         //if ( this.value. != VariantType.VT_DATE )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
-
-         return this.value.dateValue;
+         return ret;
       }
 
       public byte AsByte()
       {
-         //if ( this.value.variantType != VariantType.VT_UI1 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_UI1 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.byteValue;
+         return this.GetDataBytes()[0];
       }
 
       public sbyte AsSByte()
       {
-         //if ( this.value.variantType != VariantType.VT_I1 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_I1 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.sbyteValue;
+         return (sbyte) this.GetDataBytes()[0];
       }
 
-      public short AsShort()
+      public ushort AsUInt16()
       {
-         //if ( this.value.variantType != VariantType.VT_I2 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_UI2 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.shortValue;
+         return BitConverter.ToUInt16( this.GetDataBytes(), 0 );
       }
 
-      public ushort AsUShort()
+      public short AsInt16()
       {
-         //if ( this.value.variantType != VariantType.VT_UI2 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_I2 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.ushortValue;
+         return BitConverter.ToInt16( this.GetDataBytes(), 0 );
       }
 
-      public int AsInt()
+      public uint AsUInt32()
       {
-         //if ( this.value.variantType != VariantType.VT_I4 && this.value.variantType != VariantType.VT_INT )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_UI4 && ( (VarEnum) this.vt ) != VarEnum.VT_UINT )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.intValue;
+         return BitConverter.ToUInt32( this.GetDataBytes(), 0 );
       }
 
-      public uint AsUInt()
+      public int AsInt32()
       {
-         //if ( this.value.variantType != VariantType.VT_UI4 && this.value.variantType != VariantType.VT_UINT )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
-
-         return this.value.uintValue;
+         return this.AsInt32( true );
       }
 
-      public long AsLong()
+      private int AsInt32( bool checkType )
       {
-         //if ( this.value.variantType != VariantType.VT_I8 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( checkType )
+         {
+            if ( ( (VarEnum) this.vt ) != VarEnum.VT_I4 && ( (VarEnum) this.vt ) != VarEnum.VT_INT && ( (VarEnum) this.vt ) != VarEnum.VT_ERROR )
+            {
+               throw new InvalidCastException( "The value cannot be converted to the specified type." );
+            }
+         }
 
-         return this.value.longValue;
+         return BitConverter.ToInt32( this.GetDataBytes(), 0 );
+      }
+
+      public ulong AsUInt64()
+      {
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_UI8 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
+
+         return BitConverter.ToUInt64( this.GetDataBytes(), 0 );
+      }
+
+      public long AsInt64()
+      {
+         return this.AsInt64( true );
+      }
+
+      private long AsInt64( bool checkType )
+      {
+         if ( checkType )
+         {
+            if ( ( (VarEnum) this.vt ) != VarEnum.VT_I8 )
+            {
+               throw new InvalidCastException( "The value cannot be converted to the specified type." );
+            }
+         }
+
+         return BitConverter.ToInt64( this.GetDataBytes(), 0 );
       }
 
       public float AsFloat()
       {
-         //if ( this.value.variantType != VariantType.VT_R4 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_R4 )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
 
-         return this.value.floatValue;
+         return BitConverter.ToSingle( this.GetDataBytes(), 0 );
       }
 
       public double AsDouble()
       {
-         //if ( this.value.variantType != VariantType.VT_R8 )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         return this.AsDouble( true );
+      }
 
-         return this.value.doubleValue;
+      private double AsDouble( bool checkType )
+      {
+         if ( checkType )
+         {
+            if ( ( (VarEnum) this.vt ) != VarEnum.VT_R8 )
+            {
+               throw new InvalidCastException( "The value cannot be converted to the specified type." );
+            }
+         }
+
+         return BitConverter.ToDouble( this.GetDataBytes(), 0 );
       }
 
       public bool AsBool()
       {
-         //if ( this.value.variantType != VariantType.VT_BOOL )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
-
-         if ( this.value.boolValue == 0 )
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_BOOL )
          {
-            return false;
-         }
-         else if ( this.value.boolValue == -1 )
-         {
-            return true;
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
          }
 
-         throw new FormatException( String.Format( "Boolean value was \"{0}\".", this.value.boolValue ) );
+         return this.AsInt32( false ) == 0 ? false : true;
       }
 
-      public Guid AsClsid()
+      public DateTime AsDateTime()
       {
-         //if ( this.value.variantType != VariantType.VT_CLSID )
-         //{
-         //   throw new InvalidOperationException( "Cannot be converted to type." );
-         //}
+         if ( ( (VarEnum) this.vt ) == VarEnum.VT_DATE )
+         {
+            return DateTime.FromOADate( this.AsDouble( false ) );
+         }
+         else if ( ( (VarEnum) this.vt ) == VarEnum.VT_FILETIME )
+         {
+            return DateTime.FromFileTime( this.AsInt64( false ) );
+         }
 
-         //this.value.clsidValue = (Guid) Marshal.PtrToStructure( this.value.pointerValue, typeof( Guid ) );
-
-         return this.value.clsidValue;
+         throw new InvalidCastException( "The value cannot be converted to the specified type." );
       }
 
-      public override string ToString()
+      public string AsString()
       {
-         return base.ToString();
-         //switch ( this.variantType )
-         //{
-         //   case VariantType.VT_LPWSTR:
-         //   {
-         //      return Marshal.PtrToStringUni( this.pointerValue );
-         //   }
-         //   case VariantType.VT_LPSTR:
-         //   {
-         //      return Marshal.PtrToStringAnsi( this.pointerValue );
-         //   }
-         //   case VariantType.VT_BSTR:
-         //   {
-         //      return Marshal.PtrToStringBSTR( this.pointerValue );
-         //   }
-         //   case VariantType.VT_BOOL:
-         //   {
-         //      return this.ToBool().ToString();
-         //   }
-         //   case VariantType.VT_DATE:
-         //   {
-         //      return this.ToDateTime().ToString();
-         //   }
-         //   case VariantType.VT_R4:
-         //   {
-         //      return this.floatValue.ToString();
-         //   }
-         //   case VariantType.VT_R8:
-         //   {
-         //      return this.doubleValue.ToString();
-         //   }
-         //   case VariantType.VT_UI1:
-         //   {
-         //      return this.byteValue.ToString();
-         //   }
-         //   case VariantType.VT_I1:
-         //   {
-         //      return this.sbyteValue.ToString();
-         //   }
-         //   case VariantType.VT_UI2:
-         //   {
-         //      return this.ushortValue.ToString();
-         //   }
-         //   case VariantType.VT_I2:
-         //   {
-         //      return this.shortValue.ToString();
-         //   }
-         //   case VariantType.VT_UI4:
-         //   {
-         //      return this.uintValue.ToString();
-         //   }
-         //   case VariantType.VT_I4:
-         //   {
-         //      return this.intValue.ToString();
-         //   }
-         //   case VariantType.VT_UI8:
-         //   {
-         //      return this.longValue.ToString();
-         //   }
-         //   case VariantType.VT_I8:
-         //   {
-         //      return this.ulongValue.ToString();
-         //   }
-         //}
+         if ( ( (VarEnum) this.vt ) == VarEnum.VT_LPSTR )
+         {
+            return Marshal.PtrToStringAnsi( this.p );
+         }
+         else if ( ( (VarEnum) this.vt ) == VarEnum.VT_LPWSTR )
+         {
+            return Marshal.PtrToStringUni( this.p );
+         }
+         else if ( ( (VarEnum) this.vt ) == VarEnum.VT_BSTR )
+         {
+            return Marshal.PtrToStringBSTR( this.p );
+         }
 
-         //return this.pointerValue.ToString();
+         throw new InvalidCastException( "The value cannot be converted to the specified type." );
       }
 
-      //public static tag_inner_PROPVARIANT MarshalTo( PropVariant propVariant )
-      //{
-      //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( propVariant ) );
-      //   Marshal.StructureToPtr( propVariant, ptrValue, false );
-      //   return (tag_inner_PROPVARIANT) Marshal.PtrToStructure( ptrValue, typeof( tag_inner_PROPVARIANT ) );
-      //}
-
-      //public static PropVariant MarshalFrom( tag_inner_PROPVARIANT propVariant )
-      //{
-      //   var ipValue = new tag_inner_PROPVARIANT();
-      //   var ptrValue = Marshal.AllocHGlobal( Marshal.SizeOf( ipValue ) );
-      //   Marshal.StructureToPtr( ipValue, ptrValue, false );
-      //   return (PropVariant) Marshal.PtrToStructure( ptrValue, typeof( PropVariant ) );
-      //}
-
-      public static tag_inner_PROPVARIANT StringToPropVariant( string value )
+      public byte[] AsByteBuffer()
       {
-         // We'll use an IPortableDeviceValues object to transform the
-         // string into a PROPVARIANT
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_BLOB )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
+
+         var blobData = new byte[this.AsInt32( false )];
+         var pBlobData = IntPtr.Zero;
+
+         if ( IntPtr.Size == 4 )
+         {
+            pBlobData = new IntPtr( this.p2 );
+         }
+         else if ( IntPtr.Size == 8 )
+         {
+            // In this case, we need to derive a pointer at offset 12,
+            // because the size of the blob is represented as a 4-byte int
+            // but the pointer is immediately after that.
+            pBlobData = new IntPtr( BitConverter.ToInt64( this.GetDataBytes(), sizeof( int ) ) );
+         }
+         else
+         {
+            throw new NotSupportedException();
+         }
+
+         Marshal.Copy( pBlobData, blobData, 0, this.AsInt32( false ) );
+
+         return blobData;
+      }
+
+      public object AsIUnknown()
+      {
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_UNKNOWN )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
+
+         return Marshal.GetObjectForIUnknown( this.p );
+      }
+
+      public IntPtr AsIntPtr()
+      {
+         return this.p;
+      }
+
+      public decimal AsDecimal()
+      {
+         if ( ( (VarEnum) this.vt ) != VarEnum.VT_CY )
+         {
+            throw new InvalidCastException( "The value cannot be converted to the specified type." );
+         }
+
+         return decimal.FromOACurrency( this.AsInt64() );
+      }
+
+      private Guid AsGuid( bool checkType )
+      {
+         if ( checkType )
+         {
+            if ( ( (VarEnum) this.vt ) != VarEnum.VT_CLSID )
+            {
+               throw new InvalidCastException( "The value cannot be converted to the specified type." );
+            }
+         }
+
+         return (Guid) Marshal.PtrToStructure( this.p, typeof( Guid ) );
+      }
+
+      public Guid AsGuid()
+      {
+         return this.AsGuid( true );
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( string variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
          var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
-
-         // We insert the string value into the IPortableDeviceValues object
-         // using the SetStringValue method
-         pValues.SetStringValue( ref PortableDevicePKeys.WPD_OBJECT_ID, value );
-
-         var variant = new tag_inner_PROPVARIANT();
-
-         // We then extract the string into a PROPVARIANT by using the 
-         // GetValue method
+         pValues.SetStringValue( ref PortableDevicePKeys.WPD_OBJECT_ID, variantValue );
          pValues.GetValue( ref PortableDevicePKeys.WPD_OBJECT_ID, out variant );
 
          return variant;
       }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( UInt64 variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetUnsignedLargeIntegerValue( ref PortableDevicePKeys.WPD_OBJECT_SIZE, variantValue );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_OBJECT_SIZE, out variant );
+
+         return variant;
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( bool variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetBoolValue( ref PortableDevicePKeys.WPD_OBJECT_ISHIDDEN, variantValue ? -1 : 0 );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_OBJECT_ISHIDDEN, out variant );
+
+         return variant;
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( Guid variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetGuidValue( ref PortableDevicePKeys.WPD_OBJECT_FORMAT, ref variantValue );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_OBJECT_FORMAT, out variant );
+
+         return variant;
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( UInt32 variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetUnsignedIntegerValue( ref PortableDevicePKeys.WPD_API_OPTION_IOCTL_ACCESS, variantValue );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_API_OPTION_IOCTL_ACCESS, out variant );
+
+         return variant;
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( Int32 variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetSignedIntegerValue( ref PortableDevicePKeys.WPD_STILL_IMAGE_EXPOSURE_BIAS_COMPENSATION, variantValue );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_STILL_IMAGE_EXPOSURE_BIAS_COMPENSATION, out variant );
+
+         return variant;
+      }
+
+      public static tag_inner_PROPVARIANT Create_tag_inner_PROPVARIANT( float variantValue )
+      {
+         tag_inner_PROPVARIANT variant;
+         var pValues = (IPortableDeviceValues) new PortableDeviceTypesLib.PortableDeviceValuesClass();
+         pValues.SetFloatValue( ref PortableDevicePKeys.WPD_AUDIO_CHANNEL_COUNT, variantValue );
+         pValues.GetValue( ref PortableDevicePKeys.WPD_AUDIO_CHANNEL_COUNT, out variant );
+
+         return variant;
+      }
    }
+
+   #region PropVariant
+
+   //
+   // Acknowledgements:
+   // http://blogs.msdn.com/b/adamroot/archive/2008/04/11/interop-with-propvariants-in-net.aspx
+   // https://onedrive.live.com/prev?cid=6f4c66b0ee56cd90&id=6F4C66B0EE56CD90%21197&v=TextFileEditor
+   //
+
+   /// <summary>
+   /// Represents the OLE struct PROPVARIANT.
+   /// </summary>
+   /// <remarks>
+   /// Must call Clear when finished to avoid memory leaks. If you get the value of
+   /// a VT_UNKNOWN prop, an implicit AddRef is called, thus your reference will
+   /// be active even after the PropVariant struct is cleared.
+   /// </remarks>
+   [StructLayout( LayoutKind.Sequential )]
+   public struct PropVariant
+   {
+      #region Struct Fields
+
+      // The layout of these elements needs to be maintained.
+      //
+      // NOTE: We could use LayoutKind.Explicit, but we want
+      //       to maintain that the IntPtr may be 8 bytes on
+      //       64-bit architectures, so we'll let the CLR keep
+      //       us aligned.
+      //
+      // NOTE: In order to allow x64 compat, we need to allow for
+      //       expansion of the IntPtr. However, the BLOB struct
+      //       uses a 4-byte int, followed by an IntPtr, so
+      //       although the p field catches most pointer values,
+      //       we need an additional 4-bytes to get the BLOB
+      //       pointer. The p2 field provides this, as well as
+      //       the last 4-bytes of an 8-byte value on 32-bit
+      //       architectures.
+
+      // This is actually a VarEnum value, but the VarEnum type
+      // shifts the layout of the struct by 4 bytes instead of the
+      // expected 2.
+      private ushort vt;
+      private ushort wReserved1;
+      private ushort wReserved2;
+      private ushort wReserved3;
+      private IntPtr p;
+      private int p2;
+
+      #endregion
+
+      //private object value;
+
+      #region Union Members
+
+      private sbyte cVal // CHAR cVal;
+      {
+         get { return (sbyte) this.GetDataBytes()[0]; }
+      }
+
+      private byte bVal // UCHAR bVal;
+      {
+         get { return this.GetDataBytes()[0]; }
+      }
+
+      private short iVal // SHORT iVal;
+      {
+         get { return BitConverter.ToInt16( this.GetDataBytes(), 0 ); }
+      }
+
+      private ushort uiVal // USHORT uiVal;
+      {
+         get { return BitConverter.ToUInt16( this.GetDataBytes(), 0 ); }
+      }
+
+      private int lVal // LONG lVal;
+      {
+         get { return BitConverter.ToInt32( this.GetDataBytes(), 0 ); }
+      }
+
+      private uint ulVal // ULONG ulVal;
+      {
+         get { return BitConverter.ToUInt32( this.GetDataBytes(), 0 ); }
+      }
+
+      private long hVal // LARGE_INTEGER hVal;
+      {
+         get { return BitConverter.ToInt64( this.GetDataBytes(), 0 ); }
+      }
+
+      private ulong uhVal // ULARGE_INTEGER uhVal;
+      {
+         get { return BitConverter.ToUInt64( this.GetDataBytes(), 0 ); }
+      }
+
+      private float fltVal // FLOAT fltVal;
+      {
+         get { return BitConverter.ToSingle( this.GetDataBytes(), 0 ); }
+      }
+
+      private double dblVal // DOUBLE dblVal;
+      {
+         get { return BitConverter.ToDouble( this.GetDataBytes(), 0 ); }
+      }
+
+      private bool boolVal // VARIANT_BOOL boolVal;
+      {
+         get { return ( this.iVal == 0 ? false : true ); }
+      }
+
+      private int scode // SCODE scode;
+      {
+         get { return this.lVal; }
+      }
+
+      private decimal cyVal // CY cyVal;
+      {
+         get { return decimal.FromOACurrency( this.hVal ); }
+      }
+
+      private DateTime date // DATE date;
+      {
+         get { return DateTime.FromOADate( this.dblVal ); }
+      }
+
+      #endregion
+
+      /// <summary>
+      /// Gets a byte array containing the data bits of the struct.
+      /// </summary>
+      /// <returns>A byte array that is the combined size of the data bits.</returns>
+      private byte[] GetDataBytes()
+      {
+         var ret = new byte[IntPtr.Size + sizeof( int )];
+
+         if ( IntPtr.Size == 4 )
+         {
+            BitConverter.GetBytes( this.p.ToInt32() ).CopyTo( ret, 0 );
+         }
+         else if ( IntPtr.Size == 8 )
+         {
+            BitConverter.GetBytes( this.p.ToInt64() ).CopyTo( ret, 0 );
+         }
+
+         BitConverter.GetBytes( this.p2 ).CopyTo( ret, IntPtr.Size );
+
+         return ret;
+      }
+
+      /// <summary>
+      /// Called to properly clean up the memory referenced by a PropVariant instance.
+      /// </summary>
+      [DllImport( "ole32.dll" )]
+      private extern static int PropVariantClear( ref PropVariant pvar );
+
+      /// <summary>
+      /// Called to clear the PropVariant's referenced and local memory.
+      /// </summary>
+      /// <remarks>
+      /// You must call Clear to avoid memory leaks.
+      /// </remarks>
+      public void Clear()
+      {
+         // Can't pass "this" by ref, so make a copy to call PropVariantClear with
+         PropVariant var = this;
+         PropVariantClear( ref var );
+
+         // Since we couldn't pass "this" by ref, we need to clear the member fields manually
+         // NOTE: PropVariantClear already freed heap data for us, so we are just setting
+         //       our references to null.
+         this.vt = (ushort) VarEnum.VT_EMPTY;
+         this.wReserved1 = this.wReserved2 = this.wReserved3 = 0;
+         this.p = IntPtr.Zero;
+         this.p2 = 0;
+      }
+
+      /// <summary>
+      /// Gets the variant type.
+      /// </summary>
+      public VarEnum Type
+      {
+         get { return (VarEnum) vt; }
+      }
+
+      /// <summary>
+      /// Gets the variant value.
+      /// </summary>
+      public object Value
+      {
+         get
+         {
+            // TODO: Add support for reference types (ie. VT_REF | VT_I1)
+            // TODO: Add support for safe arrays
+
+            switch ( (VarEnum) this.vt )
+            {
+               case VarEnum.VT_I1:
+                  return this.cVal;
+               case VarEnum.VT_UI1:
+                  return this.bVal;
+               case VarEnum.VT_I2:
+                  return this.iVal;
+               case VarEnum.VT_UI2:
+                  return this.uiVal;
+               case VarEnum.VT_I4:
+               case VarEnum.VT_INT:
+                  return this.lVal;
+               case VarEnum.VT_UI4:
+               case VarEnum.VT_UINT:
+                  return this.ulVal;
+               case VarEnum.VT_I8:
+                  return this.hVal;
+               case VarEnum.VT_UI8:
+                  return this.uhVal;
+               case VarEnum.VT_R4:
+                  return this.fltVal;
+               case VarEnum.VT_R8:
+                  return this.dblVal;
+               case VarEnum.VT_BOOL:
+                  return this.boolVal;
+               case VarEnum.VT_ERROR:
+                  return this.scode;
+               case VarEnum.VT_CY:
+                  return this.cyVal;
+               case VarEnum.VT_DATE:
+                  return this.date;
+               case VarEnum.VT_FILETIME:
+                  return DateTime.FromFileTime( this.hVal );
+               case VarEnum.VT_BSTR:
+                  return Marshal.PtrToStringBSTR( this.p );
+               case VarEnum.VT_BLOB:
+                  var blobData = new byte[this.lVal];
+                  var pBlobData = IntPtr.Zero;
+                  if ( IntPtr.Size == 4 )
+                  {
+                     pBlobData = new IntPtr( this.p2 );
+                  }
+                  else if ( IntPtr.Size == 8 )
+                  {
+                     // In this case, we need to derive a pointer at offset 12,
+                     // because the size of the blob is represented as a 4-byte int
+                     // but the pointer is immediately after that.
+                     pBlobData = new IntPtr( BitConverter.ToInt64( this.GetDataBytes(), sizeof( int ) ) );
+                  }
+                  else
+                  {
+                     throw new NotSupportedException();
+                  }
+                  Marshal.Copy( pBlobData, blobData, 0, this.lVal );
+                  return blobData;
+               case VarEnum.VT_LPSTR:
+                  return Marshal.PtrToStringAnsi( this.p );
+               case VarEnum.VT_LPWSTR:
+                  return Marshal.PtrToStringUni( this.p );
+               case VarEnum.VT_UNKNOWN:
+                  return Marshal.GetObjectForIUnknown( this.p );
+               case VarEnum.VT_DISPATCH:
+                  return this.p;
+               default:
+                  throw new NotSupportedException( "The type of this variable is not supported ('" + this.vt.ToString() + "')." );
+            }
+         }
+      }
+   }
+
+   #endregion
 }

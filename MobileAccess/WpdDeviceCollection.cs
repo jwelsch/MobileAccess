@@ -37,7 +37,7 @@ namespace MobileAccess
 
             foreach ( var deviceId in deviceIds )
             {
-               collection.Add( WpdDevice.Create( deviceId ) );
+               collection.Add( new WpdDevice( deviceId ) );
             }
          }
 

@@ -99,5 +99,63 @@ namespace MobileAccess
       {
          return value.EnsureCharacter( 0, character, insert );
       }
+
+      public static int CountDigits( this byte value )
+      {
+         return ( (UInt64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this sbyte value )
+      {
+         return ( (Int64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this Int16 value )
+      {
+         return ( (Int64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this UInt16 value )
+      {
+         return ( (UInt64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this Int32 value )
+      {
+         return ( (Int64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this UInt32 value )
+      {
+         return ( (UInt64) value ).CountDigits();
+      }
+
+      public static int CountDigits( this Int64 value )
+      {
+         var d = 0;
+         var v = value;
+         do
+         {
+            v /= 10;
+            d++;
+         }
+         while ( v > 0 );
+
+         return d;
+      }
+
+      public static int CountDigits( this UInt64 value )
+      {
+         var d = 0;
+         var v = value;
+         do
+         {
+            v /= 10;
+            d++;
+         }
+         while ( v > 0 );
+
+         return d;
+      }
    }
 }

@@ -227,12 +227,11 @@ namespace MobileAccess
 
       public void Delete( IWpdObject deleteObject )
       {
-         var variant = PropVariant.StringToPropVariant( deleteObject.ObjectID );
+         var variant = PROPVARIANT.Create_tag_inner_PROPVARIANT( deleteObject.ObjectID );
          var objectIds = (IPortableDevicePropVariantCollection) new PortableDeviceTypesLib.PortableDevicePropVariantCollection();
          objectIds.Add( variant );
 
          IPortableDevicePropVariantCollection results = null;
-
          deleteObject.Content.Delete( 0, objectIds, ref results );
       }
 

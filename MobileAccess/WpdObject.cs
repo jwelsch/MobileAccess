@@ -28,13 +28,31 @@ namespace MobileAccess
       private string name;
       public string Name
       {
-         get { return this.name; }
+         get
+         {
+            if ( this.name == null )
+            {
+               var property = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_NAME );
+               this.name = property.Value;
+            }
+
+            return this.name;
+         }
       }
 
       private string originalFileName;
       public string OriginalFileName
       {
-         get { return this.originalFileName; }
+         get
+         {
+            if ( this.originalFileName == null )
+            {
+               var property = this.Properties.Find<string>( PortableDevicePKeys.WPD_OBJECT_ORIGINAL_FILE_NAME );
+               this.originalFileName = property.Value;
+            }
+
+            return this.originalFileName;
+         }
       }
 
       private bool isContainer;
@@ -49,11 +67,19 @@ namespace MobileAccess
          get { return this.size; }
       }
 
+      public WpdPropertyCollection Properties
+      {
+         get;
+         private set;
+      }
+
       public WpdObject( string objectID, IWpdObject parent, IPortableDeviceContent content )
       {
          this.ObjectID = objectID;
          this.Parent = parent;
          this.Content = content;
+         this.Properties = new WpdPropertyCollection( this.Content, this.ObjectID );
+         this.Properties.Refresh();
 
          IPortableDeviceProperties properties = null;
          this.Content.Properties( out properties );

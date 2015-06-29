@@ -41,7 +41,12 @@ namespace MobileAccess
                         ClipboardApi.Copy( device.DeviceID, true );
                      }
 
-                     device.DisplayProperties( new ConsoleWriter() );
+                     Console.WriteLine( "Found {0} properties.", device.Properties.Count );
+
+                     for ( var i = 0; i < device.Properties.Count; i++ )
+                     {
+                        Console.WriteLine( "{0} {1} ({2}): {3}", i.ToString( "D" + device.Properties.Count.CountDigits().ToString() ), PortableDevicePKeys.FindKeyName( device.Properties[i].Key ), device.Properties[i].Type, device.Properties[i].Value );
+                     }
                   }
                }
                else if ( arguments.CommandUpload )

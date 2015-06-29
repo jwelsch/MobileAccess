@@ -71,6 +71,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WpdObject.cs" />
+    <Compile Include="WpdProperty.cs" />
+    <Compile Include="WpdPropertyCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

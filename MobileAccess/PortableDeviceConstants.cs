@@ -2219,7 +2219,7 @@ namespace MobileAccess
             }
          }
 
-         return string.Empty;
+         return String.Format( "[{0} {1}]", key.fmtid, key.pid );
       }
 
       public static string FindKeyName( Guid fmtid, uint pid )
