@@ -270,11 +270,6 @@ namespace MobileAccess
          var targetFilePath = Path.Combine( targetDirectoryPath, sourceObject.OriginalFileName );
          var sourceFilePath = sourceObject.GetPath();
 
-         if ( !Directory.Exists( targetDirectoryPath ) )
-         {
-            Directory.CreateDirectory( targetDirectoryPath );
-         }
-
          if ( this.DataCopyStarted != null )
          {
             this.DataCopyStarted( this, new DataCopyStartedArgs( sourceFilePath, targetFilePath ) );

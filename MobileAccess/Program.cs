@@ -107,6 +107,18 @@ namespace MobileAccess
                      var components = WildcardSearch.SplitPattern( arguments.DownloadSourcePath );
                      var sourceObject = device.ObjectFromPath( components.Item1, false );
 
+                     if ( !System.IO.Directory.Exists( arguments.DownloadTargetPath ) )
+                     {
+                        if ( arguments.CreatePath )
+                        {
+                           System.IO.Directory.CreateDirectory( arguments.DownloadTargetPath );
+                        }
+                        else
+                        {
+                           throw new System.IO.DirectoryNotFoundException( String.Format( "The directory \"{0}\" was not found.", arguments.DownloadTargetPath ) );
+                        }
+                     }
+
                      var commander = new DeviceCommander( device );
                      commander.DataCopyStarted += ( sender, e ) =>
                      {
