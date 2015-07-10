@@ -58,7 +58,12 @@
     <Compile Include="ClipboardApi.cs" />
     <Compile Include="ConsoleWriter.cs" />
     <Compile Include="DataCopied.cs" />
+    <Compile Include="DeviceCommand.cs" />
+    <Compile Include="DeviceCommandDataCopy.cs" />
     <Compile Include="DeviceCommander.cs" />
+    <Compile Include="DeviceCommandFactory.cs" />
+    <Compile Include="DeviceCommandUpload.cs" />
+    <Compile Include="IDeviceCommand.cs" />
     <Compile Include="IMessageWriter.cs" />
     <Compile Include="IWpdDevice.cs" />
     <Compile Include="IWpdObject.cs" />
